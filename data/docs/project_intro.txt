@@ -1,0 +1,5 @@
+LangChain is a framework for building LLM applications.
+RAG usually has several basic steps: load documents, split text, build embeddings, store vectors, retrieve relevant chunks, and generate answers.
+Chroma is a lightweight vector database that is suitable for local demos.
+FastAPI can be used to expose a simple /ask endpoint for question answering.
+This side project focuses on a minimal and understandable workflow instead of complex production features.

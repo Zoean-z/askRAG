@@ -1,0 +1,8 @@
+﻿fastapi
+uvicorn[standard]
+langchain
+langchain-openai
+langchain-chroma
+langchain-text-splitters
+python-dotenv
+python-multipart

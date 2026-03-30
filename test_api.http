@@ -1,0 +1,132 @@
+﻿GET http://127.0.0.1:8001/
+Accept: text/html
+
+###
+
+GET http://127.0.0.1:8001/library
+Accept: text/html
+
+###
+
+GET http://127.0.0.1:8001/health
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8001/documents
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8001/documents/upload
+Content-Type: multipart/form-data; boundary=askRagBoundary
+Accept: application/json
+
+--askRagBoundary
+Content-Disposition: form-data; name="file"; filename="project_intro.txt"
+Content-Type: text/plain
+
+< data/docs/project_intro.txt
+--askRagBoundary--
+
+###
+
+DELETE http://127.0.0.1:8001/documents?source=data/docs/project_intro.txt
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8001/ask
+Content-Type: application/json
+Accept: application/json
+
+{
+  "question": "它适合什么场景？",
+  "history": [
+    {
+      "role": "user",
+      "content": "Chroma 是什么？"
+    },
+    {
+      "role": "assistant",
+      "content": "Chroma 是一个轻量级向量数据库。"
+    }
+  ]
+}
+
+###
+
+POST http://127.0.0.1:8001/ask
+Content-Type: application/json
+Accept: application/json
+
+{
+  "question": "总结 递归学习与第一性原理求职——AI时代的方法论.md"
+}
+
+###
+
+POST http://127.0.0.1:8001/ask/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "question": "总结 递归学习与第一性原理求职——AI时代的方法论.md"
+}
+
+###
+
+POST http://127.0.0.1:8001/ask
+Content-Type: application/json
+Accept: application/json
+
+{
+  "question": "总结这个文件",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "上一轮回答引用了目标文档。",
+      "sources": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ]
+    }
+  ]
+}
+
+###
+
+POST http://127.0.0.1:8001/ask/stream
+Content-Type: application/json
+Accept: text/event-stream
+
+{
+  "question": "总结这个文件",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "上一轮回答引用了目标文档。",
+      "sources": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ]
+    }
+  ]
+}
+
+###
+
+POST http://127.0.0.1:8001/ask
+Content-Type: application/json
+Accept: application/json
+
+{
+  "question": "再压缩成3点",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "上一轮已经给出了这份文档的总结。",
+      "sources": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ]
+    }
+  ]
+}

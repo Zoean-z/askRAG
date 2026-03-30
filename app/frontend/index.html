@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>askRAG Console</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body data-page="chat">
+  <div class="page-shell page-shell-chat">
+    <header class="topbar">
+      <a class="brandmark" href="/">
+        <span class="brandmark-name">askRAG</span>
+        <span id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</span>
+      </a>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link is-active" href="/">Chat</a>
+        <a id="navLibrary" class="nav-link" href="/library">Library</a>
+      </nav>
+      <div class="locale-switch" aria-label="Language switcher">
+        <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+        <button id="localeEn" class="locale-button" type="button">EN</button>
+      </div>
+    </header>
+
+    <main class="workspace workspace-chat workspace-chat-docked">
+      <section class="chat-stage">
+        <header class="chat-stage-header">
+          <div class="chat-stage-copy">
+            <p id="eyebrowText" class="eyebrow">Chat</p>
+            <h1>askRAG Chat</h1>
+            <p id="heroText" class="hero-text">Ask about the current knowledge base and read the answer with the primary source.</p>
+          </div>
+          <div class="chat-stage-meta">
+            <section class="control-block chat-hints">
+              <h2 id="notesTitle">Notes</h2>
+              <ul class="notes-list notes-list-inline">
+                <li id="noteOne">Describe what you want to know.</li>
+                <li id="noteTwo">Upload files from the library page when needed.</li>
+                <li id="noteThree">The primary source appears below each answer.</li>
+              </ul>
+            </section>
+          </div>
+        </header>
+
+        <section id="transcriptPanel" class="transcript-panel transcript-panel-chat" aria-label="Conversation transcript">
+          <div id="messageList" class="message-list message-list-chat">
+            <article class="message message-assistant message-intro" data-role-key="assistant">
+              <div class="message-role">assistant</div>
+              <div id="introMessage" class="message-body">
+                <p>Enter a question to start.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <div class="chat-composer-shell">
+          <section class="chat-composer-meta">
+            <div class="control-block chat-prompt-copy">
+              <h2 id="promptTitle">Prompt</h2>
+              <p id="promptText">Ask one question at a time.</p>
+            </div>
+          </section>
+
+          <form id="chatForm" class="composer composer-docked" novalidate>
+            <label id="questionLabel" class="sr-only" for="questionInput">Question</label>
+            <textarea
+              id="questionInput"
+              name="question"
+              rows="3"
+              maxlength="2000"
+              placeholder="What is Chroma used for?"
+              required
+            ></textarea>
+            <div class="composer-actions composer-actions-docked">
+              <p id="statusText" class="status-text" aria-live="polite">Ready.</p>
+              <button id="submitButton" type="submit">Send</button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <template id="messageTemplate">
+    <article class="message" data-role-key="assistant">
+      <div class="message-role"></div>
+      <div class="message-body"></div>
+      <div class="message-sources"></div>
+    </article>
+  </template>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>

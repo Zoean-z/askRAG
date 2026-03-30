@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>askRAG Console</title>
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body data-page="library">
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brandmark" href="/">
+        <span class="brandmark-name">askRAG</span>
+        <span id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</span>
+      </a>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link" href="/">Chat</a>
+        <a id="navLibrary" class="nav-link is-active" href="/library">Library</a>
+      </nav>
+      <div class="locale-switch" aria-label="Language switcher">
+        <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+        <button id="localeEn" class="locale-button" type="button">EN</button>
+      </div>
+    </header>
+
+    <section class="hero hero-library">
+      <div class="hero-copy">
+        <p id="eyebrowText" class="eyebrow">Library</p>
+        <h1>Library</h1>
+        <p id="heroText" class="hero-text">Add files here to expand what chat can answer.</p>
+      </div>
+    </section>
+
+    <main class="workspace workspace-library">
+      <section class="library-stage">
+        <section class="control-panel library-panel">
+          <div class="control-block">
+            <h2 id="uploadTitle">Upload document</h2>
+            <p id="uploadText">Upload <span class="mono">.txt</span> or <span class="mono">.md</span> files.</p>
+          </div>
+          <form id="uploadForm" class="upload-form" novalidate>
+            <label id="filePickerLabel" class="file-picker" for="fileInput">
+              <span id="filePickerText">Choose a text file</span>
+              <input id="fileInput" type="file" accept=".txt,.md">
+            </label>
+            <div class="composer-actions upload-actions">
+              <p id="uploadStatus" class="status-text" aria-live="polite">No file selected.</p>
+              <button id="uploadButton" type="submit">Upload</button>
+            </div>
+          </form>
+          <section class="control-block control-block-muted">
+            <h2 id="notesTitle">Notes</h2>
+            <ul class="notes-list">
+              <li id="noteOne">Uploaded files appear on the right.</li>
+              <li id="noteTwo">New content becomes available in chat after processing.</li>
+              <li id="noteThree">Duplicate files are skipped automatically.</li>
+            </ul>
+          </section>
+        </section>
+      </section>
+
+      <section class="library-inspector">
+        <div class="inspector-header">
+          <h2 id="libraryTitle">Added files</h2>
+          <p id="libraryText">This panel shows the files currently available to chat.</p>
+        </div>
+        <div id="documentList" class="document-list document-list-panel" aria-live="polite"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/assets/app.js"></script>
+</body>
+</html>
