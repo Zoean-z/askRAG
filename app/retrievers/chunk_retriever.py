@@ -1,5 +1,5 @@
-﻿import re
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from langchain_core.documents import Document
@@ -8,11 +8,13 @@ from app.rag import (
     DOCS_DIR,
     SUPPORTED_EXTENSIONS,
     load_documents,
-    normalize_history,
     retrieve_vector_documents,
     rewrite_question,
     split_documents,
 )
+from app.retrievers.reranker import rerank_chunk_results
+from app.session_memory import build_reference_history
+from app.tool_router import extract_target_source_hint
 
 QUESTION_HINT_TERMS = [
     "具体操作",
@@ -32,9 +34,22 @@ class ChunkRetrievalBundle:
     vector_results: list[tuple[Document, float]]
     keyword_results: list[tuple[Document, float]]
     merged_results: list[tuple[Document, float]]
-    results: list[tuple[Document, float]]
-    sources: list[str]
-    history: list[dict[str, str]]
+    reranked_results: list[tuple[Document, float]] = field(default_factory=list)
+    results: list[tuple[Document, float]] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
+    history: list[dict[str, str]] = field(default_factory=list)
+    rerank_diagnostics: "RerankDiagnostics" = field(default_factory=lambda: RerankDiagnostics())
+    retrieval_debug: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class RerankDiagnostics:
+    candidate_count: int = 0
+    order_changed: bool = False
+    merged_top_label: str | None = None
+    reranked_top_label: str | None = None
+    merged_top_ids: list[str] = field(default_factory=list)
+    reranked_top_ids: list[str] = field(default_factory=list)
 
 
 _CORPUS_SIGNATURE: tuple[tuple[str, int, int], ...] | None = None
@@ -116,6 +131,59 @@ def get_chunk_lookup(
 
 def normalize_for_search(text: str) -> str:
     return text.casefold()
+
+
+def normalize_source_path(source: str) -> str:
+    return source.replace("\\", "/").strip().casefold()
+
+
+def get_source_basename(source: str) -> str:
+    normalized = normalize_source_path(source)
+    return normalized.rsplit("/", 1)[-1]
+
+
+def resolve_target_source_hint(target_source_hint: str | None) -> str | None:
+    normalized_hint = normalize_source_path(target_source_hint or "")
+    if not normalized_hint:
+        return None
+
+    documents_by_source = get_corpus_documents_by_source()
+    if not documents_by_source:
+        return None
+
+    exact_matches = [
+        source for source in documents_by_source if normalize_source_path(source) == normalized_hint
+    ]
+    if exact_matches:
+        return sorted(exact_matches)[0]
+
+    basename = get_source_basename(normalized_hint)
+    basename_matches = [source for source in documents_by_source if get_source_basename(source) == basename]
+    if len(basename_matches) == 1:
+        return basename_matches[0]
+
+    suffix_matches = [source for source in documents_by_source if normalize_source_path(source).endswith(f"/{normalized_hint}")]
+    if len(suffix_matches) == 1:
+        return suffix_matches[0]
+
+    return None
+
+
+def filter_results_to_source(
+    results: list[tuple[Document, float]],
+    target_source: str | None,
+    *,
+    limit: int | None = None,
+) -> list[tuple[Document, float]]:
+    if not target_source:
+        return results[:limit] if limit is not None else list(results)
+
+    filtered = [
+        (doc, score)
+        for doc, score in results
+        if doc.metadata.get("source", "") == target_source
+    ]
+    return filtered[:limit] if limit is not None else filtered
 
 
 def extract_keyword_candidates(query: str) -> list[str]:
@@ -201,12 +269,20 @@ def score_chunk_by_keywords(chunk: Document, query: str, keywords: list[str]) ->
     return score
 
 
-def keyword_search_documents(query: str, limit: int = 5) -> list[tuple[Document, float]]:
+def keyword_search_documents(
+    query: str,
+    limit: int = 5,
+    *,
+    target_source_hint: str | None = None,
+) -> list[tuple[Document, float]]:
     keywords = extract_keyword_candidates(query)
     if not keywords:
         return []
 
+    target_source = resolve_target_source_hint(target_source_hint)
     chunks = get_corpus_chunks()
+    if target_source is not None:
+        chunks = [chunk for chunk in chunks if chunk.metadata.get("source", "") == target_source]
     scored_chunks: list[tuple[Document, float]] = []
 
     for chunk in chunks:
@@ -268,6 +344,64 @@ def merge_retrieval_results(
     ]
 
 
+def build_score_lookup(results: list[tuple[Document, float]]) -> dict[str, float]:
+    lookup: dict[str, float] = {}
+    for doc, score in results:
+        source = doc.metadata.get("source", "unknown")
+        chunk_index = doc.metadata.get("chunk_index", "chunk")
+        chunk_id = str(doc.metadata.get("chunk_id", f"{source}::{chunk_index}"))
+        lookup[chunk_id] = score
+    return lookup
+
+
+def get_chunk_id(doc: Document) -> str:
+    source = doc.metadata.get("source", "unknown")
+    chunk_index = doc.metadata.get("chunk_index", "chunk")
+    return str(doc.metadata.get("chunk_id", f"{source}::{chunk_index}"))
+
+
+def get_chunk_label(doc: Document) -> str:
+    source = doc.metadata.get("source", "unknown")
+    chunk_index = doc.metadata.get("chunk_index", "chunk")
+    return f"{source}#{chunk_index}"
+
+
+def rerank_retrieval_results(
+    query: str,
+    merged_results: list[tuple[Document, float]],
+    *,
+    vector_results: list[tuple[Document, float]],
+    keyword_results: list[tuple[Document, float]],
+    limit: int = 5,
+) -> list[tuple[Document, float]]:
+    return rerank_chunk_results(
+        query,
+        merged_results,
+        keywords=extract_keyword_candidates(query),
+        vector_score_lookup=build_score_lookup(vector_results),
+        keyword_score_lookup=build_score_lookup(keyword_results),
+        limit=limit,
+    )
+
+
+def build_rerank_diagnostics(
+    merged_results: list[tuple[Document, float]],
+    reranked_results: list[tuple[Document, float]],
+) -> RerankDiagnostics:
+    merged_top = merged_results[0][0] if merged_results else None
+    reranked_top = reranked_results[0][0] if reranked_results else None
+    merged_top_ids = [get_chunk_id(doc) for doc, _ in merged_results[:3]]
+    reranked_top_ids = [get_chunk_id(doc) for doc, _ in reranked_results[:3]]
+    return RerankDiagnostics(
+        candidate_count=len(merged_results),
+        order_changed=merged_top_ids != reranked_top_ids,
+        merged_top_label=get_chunk_label(merged_top) if merged_top is not None else None,
+        reranked_top_label=get_chunk_label(reranked_top) if reranked_top is not None else None,
+        merged_top_ids=merged_top_ids,
+        reranked_top_ids=reranked_top_ids,
+    )
+
+
 def expand_results_with_neighbors(
     results: list[tuple[Document, float]],
     window: int = 1,
@@ -320,6 +454,7 @@ def run_hybrid_chunk_search(
     merge_limit: int | None = None,
     neighbor_window: int = 1,
     final_limit: int | None = None,
+    target_source_hint: str | None = None,
 ) -> tuple[
     list[tuple[Document, float]],
     list[tuple[Document, float]],
@@ -329,15 +464,30 @@ def run_hybrid_chunk_search(
     keyword_limit = keyword_limit or max(vector_k, 5)
     merge_limit = merge_limit or max(vector_k, 5)
     final_limit = final_limit or max(vector_k + 2, 7)
+    target_source = resolve_target_source_hint(target_source_hint)
+    vector_fetch_limit = max(vector_k * 4, 12) if target_source else vector_k
 
-    vector_results = retrieve_vector_documents(query, k=vector_k)
-    keyword_results = keyword_search_documents(query, limit=keyword_limit)
+    # Main local retrieval flow:
+    # 1. recall candidate chunks with vector and keyword search
+    # 2. merge both recall channels into one candidate list
+    # 3. rerank merged candidates before any neighbor expansion
+    # 4. expand neighbors only around the reranked core hits
+    vector_results = retrieve_vector_documents(query, k=vector_fetch_limit)
+    vector_results = filter_results_to_source(vector_results, target_source, limit=vector_k)
+    keyword_results = keyword_search_documents(query, limit=keyword_limit, target_source_hint=target_source)
     merged_results = merge_retrieval_results(vector_results, keyword_results, limit=merge_limit)
+    reranked_results = rerank_retrieval_results(
+        query,
+        merged_results,
+        vector_results=vector_results,
+        keyword_results=keyword_results,
+        limit=merge_limit,
+    )
     if neighbor_window > 0:
-        final_results = expand_results_with_neighbors(merged_results, window=neighbor_window, limit=final_limit)
+        final_results = expand_results_with_neighbors(reranked_results, window=neighbor_window, limit=final_limit)
     else:
-        final_results = merged_results[:final_limit]
-    return vector_results, keyword_results, merged_results, final_results
+        final_results = reranked_results[:final_limit]
+    return vector_results, keyword_results, merged_results, reranked_results, final_results
 
 
 def get_sources(results: list[tuple[Document, float]]) -> list[str]:
@@ -374,34 +524,49 @@ def prepare_chunk_answer_material(
     history: list[dict[str, str]] | None = None,
     k: int = 3,
 ) -> ChunkRetrievalBundle:
-    normalized_history = normalize_history(history)
-    rewritten_question = rewrite_question(question, normalized_history)
-    vector_results, keyword_results, merged_results, results = run_hybrid_chunk_search(
+    # Primary retrieval entry used by pipeline.py and workflow.py.
+    reference_history = build_reference_history(question, history)
+    rewritten_question = rewrite_question(question, reference_history)
+    target_source_hint = extract_target_source_hint(question)
+    resolved_target_source = resolve_target_source_hint(target_source_hint)
+    vector_results, keyword_results, merged_results, reranked_results, results = run_hybrid_chunk_search(
         rewritten_question,
         vector_k=k,
         keyword_limit=max(k, 5),
         merge_limit=max(k, 5),
         neighbor_window=1,
         final_limit=max(k + 2, 7),
+        target_source_hint=target_source_hint,
     )
     return ChunkRetrievalBundle(
         rewritten_question=rewritten_question,
         vector_results=vector_results,
         keyword_results=keyword_results,
         merged_results=merged_results,
+        reranked_results=reranked_results,
         results=results,
-        sources=get_sources(merged_results),
-        history=normalized_history,
+        sources=get_sources(results),
+        history=reference_history,
+        rerank_diagnostics=build_rerank_diagnostics(merged_results, reranked_results),
+        retrieval_debug={
+            "backend": "chroma",
+            "target_source_hint": target_source_hint,
+            "resolved_target_source": resolved_target_source,
+        },
     )
 
 
 def retrieve_documents(query: str, k: int = 3) -> list[tuple[Document, float]]:
-    _, _, _, results = run_hybrid_chunk_search(
+    _, _, _, _, results = run_hybrid_chunk_search(
         query,
         vector_k=k,
         keyword_limit=max(k, 5),
         merge_limit=max(k, 5),
         neighbor_window=1,
         final_limit=max(k + 2, 7),
+        target_source_hint=extract_target_source_hint(query),
     )
     return results
+
+
+

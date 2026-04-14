@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>askRAG Preview Memory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="memory" data-preview="true">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="material-symbols-outlined">memory</span>
+        </div>
+        <div class="brand-copy">
+          <div class="brandmark-name">askRAG</div>
+          <div id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</div>
+        </div>
+      </div>
+
+      <nav id="primaryNav" class="sidebar-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link" href="./chat.html">Chat</a>
+        <a id="navLibrary" class="nav-link" href="./library.html">Library</a>
+        <a id="navMemory" class="nav-link is-active" href="./memory.html">Memory</a>
+      </nav>
+
+      <section class="sidebar-section">
+        <div class="sidebar-section-header">
+          <p id="snapshotEyebrow" class="eyebrow">Snapshot</p>
+          <h2 id="countsTitle">At a glance</h2>
+        </div>
+        <dl class="memory-stats">
+          <div class="memory-stat">
+            <dt id="totalLabel" class="meta-label">Total</dt>
+            <dd id="totalCount" class="memory-stat-value">0</dd>
+          </div>
+          <div class="memory-stat">
+            <dt id="approvedLabel" class="meta-label">Preferences</dt>
+            <dd id="approvedCount" class="memory-stat-value">0</dd>
+          </div>
+          <div class="memory-stat">
+            <dt id="pendingLabel" class="meta-label">Facts</dt>
+            <dd id="pendingCount" class="memory-stat-value">0</dd>
+          </div>
+          <div class="memory-stat">
+            <dt id="auditLabel" class="meta-label">Visible</dt>
+            <dd id="auditCount" class="memory-stat-value">0</dd>
+          </div>
+        </dl>
+      </section>
+
+      <footer class="sidebar-footer">
+        <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
+          <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+          <button id="localeEn" class="locale-button" type="button">EN</button>
+        </div>
+
+        <div class="sidebar-links">
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span id="sidebarSettingsLabel">Settings</span>
+          </a>
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">help_outline</span>
+            <span id="sidebarSupportLabel">Support</span>
+          </a>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" aria-hidden="true">A</div>
+          <div>
+            <div id="sidebarUserName" class="sidebar-user-name">askRAG Console</div>
+            <div id="sidebarUserMeta" class="sidebar-user-meta">Local knowledge workspace</div>
+          </div>
+        </div>
+      </footer>
+    </aside>
+
+    <main class="workspace workspace-memory">
+      <header class="utility-bar">
+        <div class="utility-copy">
+          <div class="chip-row">
+            <span id="memoryStatusPill" class="status-pill">Preview mode</span>
+            <span id="memoryScopePill" class="status-pill status-pill-soft">Memory archive</span>
+          </div>
+          <p id="eyebrowText" class="eyebrow">Memory</p>
+          <h1 id="pageTitle">Long-term Memory</h1>
+          <p id="heroText" class="hero-text">Preview the memory archive page without calling the backend memory APIs.</p>
+        </div>
+
+        <div class="utility-actions">
+          <label id="memorySearchLabel" class="utility-search" aria-label="Search memories">
+            <span class="material-symbols-outlined">search</span>
+            <input id="memorySearchInput" type="text" placeholder="Search memories..." />
+          </label>
+          <button id="memoryNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <button id="memoryHistoryButton" class="icon-button" type="button" aria-label="History">
+            <span class="material-symbols-outlined">history</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="page-hero page-hero-split surface-panel">
+        <div class="hero-copy hero-copy-compact">
+          <p id="listEyebrow" class="eyebrow">Archive</p>
+          <h2 id="listTitle">Saved long-term memories</h2>
+          <p id="listText" class="hero-text">Review local mock preferences and facts to validate density, copy, and controls.</p>
+        </div>
+        <div class="hero-meta hero-meta-panel">
+          <p id="summaryLabel" class="meta-label">Summary</p>
+          <p id="summaryValue" class="meta-value">Loaded preview memories.</p>
+        </div>
+      </section>
+
+      <section class="memory-grid">
+        <aside class="memory-rail">
+          <section class="control-block control-block-muted surface-panel">
+            <p id="memoryActionEyebrow" class="eyebrow">Action</p>
+            <h2 id="archiveMetaLabel">Action</h2>
+            <p id="archiveMetaText" class="hero-text">Delete only affects the local preview list so you can inspect the interaction safely.</p>
+          </section>
+
+          <section class="info-card info-card-soft surface-panel">
+            <p id="memoryLogicEyebrow" class="eyebrow">Logic</p>
+            <h2 id="memoryLogicTitle">Retention policy</h2>
+            <p id="memoryLogicText">This page mirrors the final shell but uses front-end data only.</p>
+          </section>
+        </aside>
+
+        <section class="memory-inspector surface-panel" aria-label="Memory entries">
+          <p id="memoryStatus" class="status-text memory-status" aria-live="polite">Loaded preview memories.</p>
+          <div class="memory-archive-header">
+            <div class="memory-archive-copy">
+              <p id="memoryArchiveEyebrow" class="eyebrow">Archive</p>
+              <h2 id="memoryArchiveTitle">Saved long-term memories</h2>
+            </div>
+            <div class="memory-archive-meta">
+              <p id="memoryArchiveMetaLabel" class="meta-label">Visible</p>
+              <p id="memoryArchiveMetaText" class="meta-value">Search and delete are local-only interactions for layout preview.</p>
+            </div>
+          </div>
+          <div id="memoryList" class="memory-list" aria-live="polite"></div>
+        </section>
+
+        <aside class="memory-aside">
+          <section class="info-card info-card-accent surface-panel">
+            <div class="info-card-topline">
+              <span id="memoryPrivacyPill" class="status-pill">Preview</span>
+              <span id="memoryRollbackPill" class="status-pill status-pill-soft">Safe to edit</span>
+            </div>
+            <h2 id="memoryCardTitle">Memory logic</h2>
+            <p id="memoryCardText">Use this panel to validate hierarchy, line length, and Chinese terminology in isolation.</p>
+          </section>
+
+          <section class="memory-preview surface-panel">
+            <p id="memoryPreviewEyebrow" class="eyebrow">Cognitive core</p>
+            <div class="memory-preview-visual" aria-hidden="true"></div>
+            <h3 id="memoryPreviewTitle">Evolving Intelligence</h3>
+            <p id="memoryPreviewText">The right column stays calm so the archive remains the main operational surface.</p>
+          </section>
+        </aside>
+      </section>
+
+      <footer class="workspace-footer">
+        <p id="memoryFooterCopy" class="workspace-footer-copy">Preview data only</p>
+        <div class="workspace-footer-actions">
+          <button id="memoryExportButton" class="button-secondary" type="button">Export Data</button>
+          <button id="memoryPurgeButton" class="button-danger" type="button">Purge All Memory</button>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script src="./preview.js"></script>
+</body>
+</html>

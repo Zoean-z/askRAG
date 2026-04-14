@@ -1,8 +1,13 @@
 ﻿import os
+import json
 import re
 import sys
+import urllib.error
+import urllib.request
 from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
@@ -107,6 +112,46 @@ QUESTION_HINT_TERMS = [
     "\u524d\u63d0\u6761\u4ef6",
 ]
 
+
+def format_response_constraints(response_constraints: dict[str, object] | None = None) -> str:
+    constraints = dict(response_constraints or {})
+    if not constraints:
+        return ""
+
+    lines = ["Apply these durable response constraints unless the user explicitly overrides them in the current turn:"]
+    response_language = str(constraints.get("response_language") or "").strip()
+    if response_language == "zh-CN":
+        lines.append("- Answer in Simplified Chinese.")
+    elif response_language == "en-US":
+        lines.append("- Answer in English.")
+
+    response_style = str(constraints.get("response_style") or "").strip()
+    if response_style == "concise":
+        lines.append("- Keep the answer concise.")
+    elif response_style == "detailed":
+        lines.append("- Provide a more detailed answer when the evidence supports it.")
+    elif response_style == "bullet_points":
+        lines.append("- Prefer bullet points when the answer is naturally list-shaped.")
+
+    try:
+        max_answer_chars = int(constraints.get("max_answer_chars") or 0)
+    except (TypeError, ValueError):
+        max_answer_chars = 0
+    if max_answer_chars > 0:
+        lines.append(f"- Keep the final answer within {max_answer_chars} characters when possible.")
+
+    return "\n".join(lines) if len(lines) > 1 else ""
+
+
+def apply_response_constraints_to_system_prompt(
+    base_prompt: str,
+    response_constraints: dict[str, object] | None = None,
+) -> str:
+    constraints_block = format_response_constraints(response_constraints)
+    if not constraints_block:
+        return base_prompt
+    return f"{base_prompt.rstrip()}\n\n{constraints_block}"
+
 class CompatibleEmbeddings(Embeddings):
     def __init__(
         self,
@@ -166,6 +211,29 @@ def get_base_url() -> str:
     )
 
 
+def get_provider_family() -> str:
+    base_url = get_base_url().casefold()
+    if "bigmodel.cn" in base_url:
+        return "glm"
+    if "dashscope.aliyuncs.com" in base_url:
+        return "dashscope"
+    return "generic"
+
+
+def _env_flag(name: str) -> bool | None:
+    raw = os.getenv(name)
+    if raw is None:
+        return None
+    normalized = raw.strip().casefold()
+    if not normalized:
+        return None
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    return None
+
+
 def get_responses_base_url() -> str:
     load_env()
     explicit = os.getenv("DASHSCOPE_RESPONSES_BASE_URL") or os.getenv("OPENAI_RESPONSES_BASE_URL")
@@ -173,17 +241,24 @@ def get_responses_base_url() -> str:
         return explicit
 
     base_url = get_base_url().rstrip("/")
-    if base_url.endswith("/api/v2/apps/protocols/compatible-mode/v1"):
-        return base_url
-    if base_url.endswith("/compatible-mode/v1"):
-        root = base_url[: -len("/compatible-mode/v1")]
-        return f"{root}/api/v2/apps/protocols/compatible-mode/v1"
-    return "https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+    if get_provider_family() == "dashscope":
+        if base_url.endswith("/api/v2/apps/protocols/compatible-mode/v1"):
+            return base_url
+        if base_url.endswith("/compatible-mode/v1"):
+            root = base_url[: -len("/compatible-mode/v1")]
+            return f"{root}/api/v2/apps/protocols/compatible-mode/v1"
+        return "https://dashscope.aliyuncs.com/api/v2/apps/protocols/compatible-mode/v1"
+    return base_url
 
 
 def get_web_search_model() -> str:
     load_env()
-    return os.getenv("WEB_SEARCH_MODEL") or os.getenv("RESPONSES_MODEL") or "qwen3.5-plus"
+    configured = os.getenv("WEB_SEARCH_MODEL") or os.getenv("RESPONSES_MODEL")
+    if configured:
+        return configured
+    if get_provider_family() == "glm":
+        return "glm-4.5-air"
+    return "qwen3.5-plus"
 
 
 def get_responses_client() -> OpenAI:
@@ -192,7 +267,107 @@ def get_responses_client() -> OpenAI:
 
 def get_chat_model() -> str:
     load_env()
-    return os.getenv("CHAT_MODEL", "qwen-plus")
+    configured = (os.getenv("CHAT_MODEL") or "").strip()
+    provider = get_provider_family()
+    if provider == "glm":
+        if not configured or configured in {"qwen-plus", "qwen3.5-plus"}:
+            return "glm-4.5-air"
+        return configured
+    if configured:
+        return configured
+    return "qwen-plus"
+
+
+def is_web_search_enabled() -> bool:
+    load_env()
+    explicit = _env_flag("ASKRAG_ENABLE_WEB_SEARCH")
+    if explicit is not None:
+        return explicit
+    return get_provider_family() in {"dashscope", "glm"}
+
+
+def get_glm_web_search_url() -> str:
+    load_env()
+    explicit = os.getenv("GLM_WEB_SEARCH_URL") or os.getenv("OPENAI_WEB_SEARCH_URL")
+    if explicit:
+        return explicit.rstrip("/")
+
+    base_url = get_base_url().rstrip("/")
+    if base_url.endswith("/chat/completions"):
+        base_url = base_url[: -len("/chat/completions")]
+    return f"{base_url}/web_search"
+
+
+def get_glm_web_search_engine() -> str:
+    load_env()
+    return (os.getenv("GLM_WEB_SEARCH_ENGINE") or "search_std").strip() or "search_std"
+
+
+def run_glm_web_search(
+    query: str,
+    *,
+    lightweight: bool = False,
+    use_extractor: bool = False,
+) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "search_query": query.strip(),
+        "search_engine": get_glm_web_search_engine(),
+        "search_intent": False,
+        "count": 3 if lightweight else 5,
+        "content_size": "high" if use_extractor else "medium",
+        "request_id": str(uuid4()),
+    }
+    request = urllib.request.Request(
+        get_glm_web_search_url(),
+        data=json.dumps(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {get_api_key()}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode("utf-8", errors="ignore").strip()
+        raise ValueError(f"GLM web search request failed (http_status={error.code}): {detail or error.reason}") from error
+    except urllib.error.URLError as error:
+        raise APIConnectionError(request=request) from error
+
+    try:
+        parsed = json.loads(body)
+    except json.JSONDecodeError as error:
+        raise ValueError("GLM web search returned invalid JSON.") from error
+
+    if not isinstance(parsed, dict):
+        raise ValueError("GLM web search returned an unexpected payload.")
+    return parsed
+
+
+def extract_web_search_result_count(payload: Any) -> int:
+    if payload is None:
+        return 0
+
+    search_result = payload.get("search_result") if isinstance(payload, dict) else getattr(payload, "search_result", None)
+    if isinstance(search_result, list):
+        return sum(1 for item in search_result if isinstance(item, dict))
+
+    outputs = payload.get("output") if isinstance(payload, dict) else getattr(payload, "output", None)
+    if not isinstance(outputs, list):
+        return 0
+
+    count = 0
+    for item in outputs:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") == "web_search_call":
+            action = item.get("action", {})
+            if isinstance(action, dict):
+                sources = action.get("sources", [])
+                if isinstance(sources, list):
+                    count += sum(1 for source in sources if isinstance(source, dict))
+    return count
 
 
 def load_documents(docs_dir: Path = DOCS_DIR) -> list[Document]:
@@ -226,8 +401,17 @@ def has_document_reference(question: str, history: list[dict[str, str]] | None =
     if any(term in normalized_question for term in document_terms):
         return True
 
-    normalized_history = normalize_history(history)
-    return any(message.get("sources") for message in normalized_history)
+    try:
+        from app.session_memory import build_reference_history, list_recent_memory_sources
+
+        reference_history = build_reference_history(question, history)
+        if any(message.get("sources") for message in reference_history):
+            return True
+
+        return bool(list_recent_memory_sources(limit=1))
+    except Exception:
+        normalized_history = normalize_history(history)
+        return any(message.get("sources") for message in normalized_history)
 
 
 def is_summary_request(question: str, history: list[dict[str, str]] | None = None) -> bool:
@@ -242,11 +426,17 @@ def is_summary_request(question: str, history: list[dict[str, str]] | None = Non
 
 def is_summary_follow_up_request(question: str, history: list[dict[str, str]] | None = None) -> bool:
     normalized_question = question.casefold()
-    normalized_history = normalize_history(history)
-    if not normalized_history:
+    try:
+        from app.session_memory import build_reference_history
+
+        reference_history = build_reference_history(question, history)
+    except Exception:
+        reference_history = normalize_history(history)
+
+    if not reference_history:
         return False
 
-    recent_assistant_messages = [message for message in reversed(normalized_history) if message.get("role") == "assistant"]
+    recent_assistant_messages = [message for message in reversed(reference_history) if message.get("role") == "assistant"]
     if not recent_assistant_messages:
         return False
 
@@ -255,7 +445,7 @@ def is_summary_follow_up_request(question: str, history: list[dict[str, str]] | 
     if not has_recent_document_context:
         return False
 
-    if is_summary_request(question, history=normalized_history):
+    if is_summary_request(question, history=reference_history):
         return True
 
     if any(term in normalized_question for term in SUMMARY_FOLLOW_UP_TERMS):
@@ -330,7 +520,14 @@ def score_document_match_in_history(
 
 
 def resolve_summary_document(question: str, history: list[dict[str, str]] | None = None) -> Document:
-    if not is_summary_flow_request(question, history=history):
+    try:
+        from app.session_memory import build_reference_history
+
+        reference_history = build_reference_history(question, history)
+    except Exception:
+        reference_history = normalize_history(history)
+
+    if not is_summary_flow_request(question, history=reference_history):
         raise ValueError("Not a summary request.")
 
     documents = load_documents()
@@ -346,11 +543,21 @@ def resolve_summary_document(question: str, history: list[dict[str, str]] | None
         scored_documents.sort(key=lambda item: item[0], reverse=True)
         return scored_documents[0][1]
 
-    recent_source_document = find_document_by_recent_sources(history, documents_by_source)
+    recent_source_document = find_document_by_recent_sources(reference_history, documents_by_source)
     if recent_source_document is not None:
         return recent_source_document
 
-    history_matched_document = score_document_match_in_history(history, documents)
+    try:
+        from app.session_memory import list_recent_memory_sources
+
+        for source in list_recent_memory_sources(limit=3):
+            document = documents_by_source.get(source)
+            if document is not None:
+                return document
+    except Exception:
+        pass
+
+    history_matched_document = score_document_match_in_history(reference_history, documents)
     if history_matched_document is not None:
         return history_matched_document
 
@@ -369,9 +576,18 @@ def build_summary_instruction(question: str, source: str) -> str:
     )
 
 
-def build_summary_messages(question: str, source: str, content: str) -> list[dict[str, str]]:
+def build_summary_messages(
+    question: str,
+    source: str,
+    content: str,
+    *,
+    response_constraints: dict[str, object] | None = None,
+) -> list[dict[str, str]]:
     return [
-        {"role": "system", "content": SUMMARY_SYSTEM_PROMPT},
+        {
+            "role": "system",
+            "content": apply_response_constraints_to_system_prompt(SUMMARY_SYSTEM_PROMPT, response_constraints),
+        },
         {
             "role": "user",
             "content": (
@@ -468,7 +684,12 @@ def print_chunk_preview(chunks: list[Document], limit: int = 5) -> None:
 def get_embeddings() -> CompatibleEmbeddings:
     load_env()
 
-    model = os.getenv("EMBEDDING_MODEL", "text-embedding-v4")
+    configured_model = (os.getenv("EMBEDDING_MODEL") or "").strip()
+    provider = get_provider_family()
+    if provider == "glm":
+        model = configured_model if configured_model and configured_model != "text-embedding-v4" else "embedding-3"
+    else:
+        model = configured_model or "text-embedding-v4"
     dimensions_raw = os.getenv("EMBEDDING_DIMENSIONS")
     dimensions = int(dimensions_raw) if dimensions_raw else None
     batch_size = int(os.getenv("EMBEDDING_BATCH_SIZE", "16"))
@@ -827,6 +1048,205 @@ def rewrite_question(question: str, history: list[dict[str, str]] | None = None)
     return rewritten.replace("\r", " ").replace("\n", " ").strip()
 
 
+WEB_QUERY_BOILERPLATE_PATTERNS = (
+    r"^\s*(?:请|麻烦|帮我|帮忙)?(?:联网|在线|上网)?(?:搜索|查找|查询|搜|找|看看|查|看)\s*(?:一下|下)?\s*",
+    r"^\s*(?:请|麻烦|帮我|帮忙)?(?:联网搜索|联网查找|联网查询|网上搜索|网上查找)\s*(?:一下|下)?\s*",
+)
+WEB_QUERY_NOISE_TERMS = (
+    "我记得",
+    "好像",
+    "应该是",
+    "似乎",
+    "大概",
+    "可能",
+    "据说",
+    "感觉",
+    "maybe",
+    "probably",
+    "perhaps",
+)
+WEB_QUERY_REFERENCE_TERMS = (
+    "他的",
+    "她的",
+    "它的",
+    "他们的",
+    "她们的",
+    "这个",
+    "那个",
+    "这部",
+    "那部",
+    "这位",
+    "那位",
+    "这款",
+    "那款",
+    "该",
+    "此",
+    "其",
+    "这个英雄",
+    "那个英雄",
+    "这个剧情",
+    "那个剧情",
+    "这个版本",
+    "那个版本",
+    "这个文件",
+    "那个文件",
+    "这个方法",
+    "那个方法",
+    "这件",
+    "那件",
+)
+WEB_QUERY_LLM_SYSTEM_PROMPT = (
+    "You rewrite a web search request into a concise search-engine query. "
+    "Use recent conversation history only to resolve references and omissions. "
+    "Remove command phrases, hedges, and filler. "
+    "Keep only the core entity and search intent. "
+    "Return only the rewritten query."
+)
+
+
+@dataclass(frozen=True, slots=True)
+class WebQueryRewriteResult:
+    raw_query: str
+    normalized_query: str
+    rewrite_used: bool
+    rewritten_query: str
+    resolved_references: list[str]
+    selected_query: str
+
+
+def _normalize_web_query_text(text: str) -> str:
+    normalized = str(text or "").strip()
+    if not normalized:
+        return ""
+
+    for pattern in WEB_QUERY_BOILERPLATE_PATTERNS:
+        normalized = re.sub(pattern, " ", normalized, flags=re.IGNORECASE)
+
+    for term in WEB_QUERY_NOISE_TERMS:
+        normalized = normalized.replace(term, " ")
+
+    normalized = re.sub(r"[\"“”‘’《》\(\)\[\]{}<>]", " ", normalized)
+    normalized = re.sub(r"[，。！？!?；;：:、,]", " ", normalized)
+    normalized = re.sub(r"\s+", " ", normalized).strip()
+    return normalized
+
+
+def _extract_web_query_references(text: str) -> list[str]:
+    compact = re.sub(r"\s+", "", str(text or "").strip())
+    if not compact:
+        return []
+
+    resolved: list[str] = []
+    seen: set[str] = set()
+    for term in WEB_QUERY_REFERENCE_TERMS + WEB_QUERY_NOISE_TERMS:
+        if term and term in compact and term not in seen:
+            seen.add(term)
+            resolved.append(term)
+    return resolved
+
+
+def _web_query_needs_rewrite(question: str, normalized_query: str, reference_history: list[dict[str, str]] | None = None) -> bool:
+    compact = re.sub(r"\s+", "", str(normalized_query or "").strip())
+    if not compact:
+        return False
+
+    if not reference_history:
+        return False
+
+    if any(term in compact for term in WEB_QUERY_REFERENCE_TERMS):
+        return True
+    if any(term in compact for term in WEB_QUERY_NOISE_TERMS):
+        return True
+    if len(compact) <= 12 and any(term in compact for term in ("这个", "那个", "他", "她", "它", "这", "那")):
+        return True
+    return False
+
+
+def _build_web_query_rewrite_messages(question: str, history: list[dict[str, str]]) -> list[dict[str, str]]:
+    history_block = format_history(history)
+    content_parts = [f"Current request: {question.strip()}"]
+    if history_block:
+        content_parts.insert(0, f"Recent conversation history:\n{history_block}")
+    return [
+        {"role": "system", "content": WEB_QUERY_LLM_SYSTEM_PROMPT},
+        {"role": "user", "content": "\n\n".join(content_parts)},
+    ]
+
+
+def rewrite_web_search_query(
+    question: str,
+    history: list[dict[str, str]] | None = None,
+    *,
+    allow_llm_rewrite: bool = True,
+) -> WebQueryRewriteResult:
+    try:
+        from app.session_memory import build_reference_history
+    except Exception:
+        build_reference_history = None  # type: ignore[assignment]
+
+    raw_query = str(question or "").strip()
+    normalized_query = _normalize_web_query_text(raw_query)
+    if not normalized_query:
+        normalized_query = raw_query
+
+    reference_history = []
+    if build_reference_history is not None:
+        try:
+            reference_history = build_reference_history(question, history)
+        except Exception:
+            reference_history = normalize_history(history)
+    else:
+        reference_history = normalize_history(history)
+
+    resolved_references = _extract_web_query_references(raw_query)
+    rewrite_used = False
+    rewritten_query = normalized_query
+
+    if allow_llm_rewrite and _web_query_needs_rewrite(raw_query, normalized_query, reference_history):
+        try:
+            client = get_chat_client()
+            response = client.chat.completions.create(
+                model=get_chat_model(),
+                temperature=0,
+                messages=_build_web_query_rewrite_messages(raw_query, reference_history),
+            )
+            candidate = (response.choices[0].message.content or "").strip()
+            candidate = _normalize_web_query_text(candidate)
+            if candidate:
+                rewritten_query = candidate
+            rewrite_used = True
+        except Exception:
+            rewrite_used = True
+            rewritten_query = normalized_query
+
+    selected_query = rewritten_query or normalized_query or raw_query
+
+    try:
+        from app.agent_tools import log_diagnostic_event
+
+        log_diagnostic_event(
+            "web_query_rewrite",
+            raw_query=raw_query,
+            normalized_query=normalized_query,
+            rewrite_used=rewrite_used,
+            rewritten_query=rewritten_query,
+            resolved_references=resolved_references,
+            selected_query=selected_query,
+            history_count=len(reference_history),
+        )
+    except Exception:
+        pass
+
+    return WebQueryRewriteResult(
+        raw_query=raw_query,
+        normalized_query=normalized_query,
+        rewrite_used=rewrite_used,
+        rewritten_query=rewritten_query,
+        resolved_references=resolved_references,
+        selected_query=selected_query,
+    )
+
+
 
 def has_unresolved_rewrite_reference(text: str) -> bool:
     compact = re.sub(r"\s+", "", text.strip().casefold())
@@ -859,6 +1279,7 @@ def build_chat_messages(
     context: str,
     history: list[dict[str, str]] | None = None,
     standalone_question: str | None = None,
+    response_constraints: dict[str, object] | None = None,
 ) -> list[dict[str, str]]:
     content_parts: list[str] = []
     history_block = format_history(history)
@@ -880,7 +1301,7 @@ def build_chat_messages(
     return [
         {
             "role": "system",
-            "content": SYSTEM_PROMPT,
+            "content": apply_response_constraints_to_system_prompt(SYSTEM_PROMPT, response_constraints),
         },
         {
             "role": "user",
@@ -944,10 +1365,11 @@ def stream_answer_question(
     question: str,
     history: list[dict[str, str]] | None = None,
     k: int = 3,
+    allow_web_search: bool = True,
 ) -> Iterator[tuple[str, dict]]:
     from app.pipeline import stream_answer_question as pipeline_stream_answer_question
 
-    yield from pipeline_stream_answer_question(question, history=history, k=k)
+    yield from pipeline_stream_answer_question(question, history=history, k=k, allow_web_search=allow_web_search)
 
 
 def run_split_demo() -> None:

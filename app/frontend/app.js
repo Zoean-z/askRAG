@@ -1,54 +1,140 @@
 const page = document.body.dataset.page || "chat";
 const localeZhButton = document.querySelector("#localeZh");
 const localeEnButton = document.querySelector("#localeEn");
-const navChat = document.querySelector("#navChat");
-const navLibrary = document.querySelector("#navLibrary");
+const primaryNav = document.querySelector("#primaryNav");
+const localeSwitch = document.querySelector("#localeSwitch");
+const navChat = document.querySelector("#navChatLabel");
+const navLibrary = document.querySelector("#navLibraryLabel");
+const navMemory = document.querySelector("#navMemoryLabel");
 const brandSubline = document.querySelector("#brandSubline");
+const sidebarSettingsLabel = document.querySelector("#sidebarSettingsLabel");
+const sidebarSupportLabel = document.querySelector("#sidebarSupportLabel");
+const sidebarUserName = document.querySelector("#sidebarUserName");
+const sidebarUserMeta = document.querySelector("#sidebarUserMeta");
 const MAX_HISTORY_MESSAGES = 8;
+const ACTIVE_CONVERSATION_STORAGE_KEY = "askrag.activeConversationId";
+const LOCALE_STORAGE_KEY = "askrag.locale";
+const WEB_SEARCH_STORAGE_KEY = "askrag.useWebSearch";
 
 const translations = {
   zh: {
     localeLabel: "\u7b80\u4f53\u4e2d\u6587",
     localeLabelShort: "English",
     brandSubline: "\u672c\u5730\u77e5\u8bc6\u5de5\u4f5c\u53f0",
+    common: {
+      primaryNavAria: "\u4e3b\u5bfc\u822a",
+      localeSwitchAria: "\u8bed\u8a00\u5207\u6362",
+      settings: "\u8bbe\u7f6e",
+      support: "\u5e2e\u52a9",
+      userName: "askRAG \u63a7\u5236\u53f0",
+      userMeta: "\u672c\u5730\u77e5\u8bc6\u5de5\u4f5c\u533a",
+      notifications: "\u901a\u77e5",
+      history: "\u5386\u53f2",
+    },
     nav: {
       chat: "\u5bf9\u8bdd",
       library: "\u77e5\u8bc6\u5e93",
+      memory: "\u8bb0\u5fc6",
     },
     pages: {
       chat: {
         title: "askRAG \u5bf9\u8bdd",
-        heading: "askRAG Chat",
+        heading: "askRAG \u5bf9\u8bdd",
         eyebrow: "\u5bf9\u8bdd",
-        hero: "\u56f4\u7ed5\u5f53\u524d\u77e5\u8bc6\u5e93\u63d0\u95ee\uff0c\u76f4\u63a5\u67e5\u770b\u56de\u7b54\u548c\u4e3b\u6765\u6e90\u3002",
+        hero: "\u5f53\u524d\u4f1a\u8bdd\u5de5\u4f5c\u533a",
+        utilityStatus: "\u8bb0\u5fc6\u5df2\u542f\u7528",
+        utilityScope: "\u5bf9\u8bdd\u5de5\u4f5c\u533a",
+        conversationsEyebrow: "\u4f1a\u8bdd",
+        conversationsTitle: "\u6700\u8fd1\u4f1a\u8bdd",
+        newConversation: "\u65b0\u5bf9\u8bdd",
+        conversationsLoading: "\u6b63\u5728\u8bfb\u53d6\u5386\u53f2\u5bf9\u8bdd...",
+        conversationsEmpty: "\u8fd8\u6ca1\u6709\u5386\u53f2\u5bf9\u8bdd\u3002",
+        conversationsReady: (count) => `\u5df2\u52a0\u8f7d ${count} \u4e2a\u5bf9\u8bdd\u3002`,
+        conversationsFailed: "\u8bfb\u53d6\u5386\u53f2\u5bf9\u8bdd\u5931\u8d25\u3002",
+        conversationCreating: "\u6b63\u5728\u521b\u5efa\u65b0\u5bf9\u8bdd...",
+        conversationOpening: "\u6b63\u5728\u6253\u5f00\u5bf9\u8bdd...",
+        conversationDeleting: "\u6b63\u5728\u5220\u9664\u5bf9\u8bdd...",
+        conversationFallbackTitle: "\u65b0\u5bf9\u8bdd",
+        deleteConversation: "\u5220\u9664",
+        confirmDeleteConversation: (name) => `\u786e\u8ba4\u5220\u9664 ${name} \u5417\uff1f\u8be5\u5bf9\u8bdd\u5c06\u4ece\u5386\u53f2\u5217\u8868\u4e2d\u79fb\u9664\u3002`,
         transcriptLabel: "\u5bf9\u8bdd\u8bb0\u5f55",
         intro: "\u8f93\u5165\u95ee\u9898\u540e\u5373\u53ef\u5f00\u59cb\u5bf9\u8bdd\uff0c\u4e5f\u53ef\u4ee5\u76f4\u63a5\u8ffd\u95ee\u4e0a\u4e00\u8f6e\u5185\u5bb9\u3002",
-        promptTitle: "\u63d0\u95ee\u533a",
-        promptText: "\u4e00\u6b21\u8f93\u5165\u4e00\u4e2a\u95ee\u9898\uff0c\u56de\u7b54\u4f1a\u663e\u793a\u5728\u5bf9\u8bdd\u533a\u3002",
+        stageEyebrow: "\u5bf9\u8bdd\u533a",
+        stageTitle: "\u628a\u56de\u7b54\u3001\u4e3b\u6765\u6e90\u548c\u6d41\u5f0f\u8fdb\u5ea6\u653e\u5728\u540c\u4e00\u4e2a\u4e3b\u5de5\u4f5c\u533a\u3002",
+        stageLead: "\u5de6\u4fa7\u4fdd\u6301\u4f1a\u8bdd\u5bfc\u822a\uff0c\u4e2d\u95f4\u4e13\u6ce8\u9605\u8bfb\u56de\u7b54\u548c\u7ee7\u7eed\u8ffd\u95ee\u3002",
+        promptTitle: "\u8f93\u5165\u533a",
+        promptText: "\u4e00\u6b21\u8f93\u5165\u4e00\u4e2a\u95ee\u9898\uff0c\u56de\u7b54\u4f1a\u6301\u7eed\u51fa\u73b0\u5728\u4e2d\u95f4\u7684\u6d88\u606f\u6d41\u91cc\u3002",
         questionLabel: "\u95ee\u9898",
         placeholder: "Chroma \u662f\u7528\u6765\u505a\u4ec0\u4e48\u7684\uff1f",
         submit: "\u53d1\u9001",
+        webSearchLabel: "\u8054\u7f51\u641c\u7d22",
+        webSearchOn: "\u5f00",
+        webSearchOff: "\u5173",
+        webSearchAriaOn: "\u5173\u95ed\u8054\u7f51\u641c\u7d22",
+        webSearchAriaOff: "\u5f00\u542f\u8054\u7f51\u641c\u7d22",
+        notesEyebrow: "\u63d0\u793a",
         notesTitle: "\u63d0\u793a",
         noteOne: "\u53ef\u4ee5\u76f4\u63a5\u8ffd\u95ee\u4e0a\u4e00\u8f6e\u63d0\u5230\u7684\u5bf9\u8c61\u6216\u65b9\u6cd5\u3002",
         noteTwo: "\u5982\u679c\u9700\u8981\u8865\u5145\u8d44\u6599\uff0c\u53ef\u4ee5\u5230\u77e5\u8bc6\u5e93\u9875\u9762\u4e0a\u4f20\u6587\u4ef6\u3002",
         noteThree: "\u56de\u7b54\u4e0b\u65b9\u4f1a\u663e\u793a\u4e3b\u6765\u6e90\u3002",
+        routingEyebrow: "\u6765\u6e90",
+        routingTitle: "\u4e3b\u6765\u6e90",
+        routingText: "\u95ee\u9898\u8d8a\u805a\u7126\uff0c\u6765\u6e90\u94fe\u8def\u5c31\u8d8a\u6e05\u6670\u3002",
+        livePill: "\u5b9e\u65f6",
+        streamingPill: "\u6d41\u5f0f\u8f93\u51fa",
+        stateTitle: "\u54cd\u5e94\u72b6\u6001",
+        stateText: "\u56de\u590d\u4f1a\u5728\u4e2d\u95f4\u5217\u9010\u6b65\u663e\u793a\uff0c\u6765\u6e90\u6807\u7b7e\u59cb\u7ec8\u8ddf\u5728\u56de\u7b54\u4e0b\u65b9\u3002",
+        conversationMeta: (count, timeText) => {
+          const parts = [];
+          if (count > 0) {
+            parts.push(`${count} \u6761\u6d88\u606f`);
+          }
+          if (timeText) {
+            parts.push(timeText);
+          }
+          return parts.join(" \u00b7 ");
+        },
       },
       library: {
         title: "askRAG \u77e5\u8bc6\u5e93",
         heading: "\u77e5\u8bc6\u5e93",
         eyebrow: "\u77e5\u8bc6\u5e93",
         hero: "\u5728\u8fd9\u91cc\u6dfb\u52a0\u6587\u4ef6\uff0c\u8865\u5145\u53ef\u4f9b\u95ee\u7b54\u4f7f\u7528\u7684\u5185\u5bb9\u3002",
-        uploadTitle: "\u4e0a\u4f20\u6587\u6863",
-        uploadText: "\u652f\u6301\u4e0a\u4f20 <span class=\"mono\">.txt</span> \u548c <span class=\"mono\">.md</span> \u6587\u4ef6\u3002",
-        filePickerText: "\u9009\u62e9\u4e00\u4e2a\u6587\u672c\u6587\u4ef6",
-        uploadSubmit: "\u4e0a\u4f20\u5165\u5e93",
+        utilityStatus: "\u8bb0\u5fc6\u5df2\u542f\u7528",
+        utilityScope: "\u6587\u6863\u5de5\u4f5c\u533a",
+        searchPlaceholder: "\u641c\u7d22\u77e5\u8bc6\u5e93...",
+        searchAria: "\u641c\u7d22\u77e5\u8bc6\u5e93",
+        sidebarEyebrow: "\u6863\u6848",
+        sidebarTitle: "\u5df2\u6dfb\u52a0\u6587\u4ef6",
+        sidebarCopy: "\u8fd9\u91cc\u5c55\u793a\u5f53\u524d\u5bf9\u8bdd\u53ef\u4ee5\u5f15\u7528\u7684\u6587\u4ef6\u3002",
+        sidebarAction: "\u77e5\u8bc6\u5e93\u6d41\u7a0b",
+        heroMetaLabel: "\u6d41\u7a0b",
+        heroMetaText: "\u5728\u8fd9\u91cc\u5f15\u5165\u8d44\u6599\u3001\u7ef4\u62a4\u6863\u6848\uff0c\u8ba9\u77e5\u8bc6\u5e93\u6210\u4e3a\u5bf9\u8bdd\u53ef\u5f15\u7528\u7684\u6587\u6863\u5de5\u4f5c\u533a\u3002",
+        intakeEyebrow: "\u5f15\u5165",
+        uploadTitle: "\u62d6\u5165\u6587\u4ef6\u8865\u5145\u77e5\u8bc6\u5e93",
+        uploadText: "\u5f53\u524d\u652f\u6301 <span class=\"mono\">TXT</span> \u548c <span class=\"mono\">MD</span> \u6587\u672c\u6587\u4ef6",
+        filePickerText: "\u6d4f\u89c8\u6587\u4ef6",
+        uploadSubmit: "\u5f00\u59cb\u4e0a\u4f20",
         deleteAction: "\u5220\u9664",
+        archiveEyebrow: "\u6863\u6848",
         libraryTitle: "\u5df2\u6dfb\u52a0\u6587\u4ef6",
         libraryText: "\u8fd9\u91cc\u5c55\u793a\u5f53\u524d\u53ef\u7528\u7684\u77e5\u8bc6\u5e93\u6587\u4ef6\u3002",
+        archiveSummaryLabel: "\u7528\u9014",
+        archiveSummaryText: "\u8fd9\u91cc\u7684\u6bcf\u4e00\u4efd\u6587\u6863\u90fd\u4f1a\u5728\u5904\u7406\u5b8c\u6210\u540e\u6210\u4e3a Chat \u53ef\u5f15\u7528\u7684\u8bc1\u636e\u6765\u6e90\u3002",
+        notesEyebrow: "\u8bf4\u660e",
         notesTitle: "\u63d0\u793a",
         noteOne: "\u4e0a\u4f20\u5b8c\u6210\u540e\uff0c\u6587\u4ef6\u4f1a\u51fa\u73b0\u5728\u53f3\u4fa7\u5217\u8868\u4e2d\u3002",
         noteTwo: "\u5df2\u6dfb\u52a0\u7684\u5185\u5bb9\u53ef\u4ee5\u5728\u5bf9\u8bdd\u9875\u76f4\u63a5\u4f7f\u7528\u3002",
         noteThree: "\u91cd\u590d\u6587\u4ef6\u4f1a\u81ea\u52a8\u8df3\u8fc7\u3002",
+        metricEyebrowOne: "\u8bc1\u636e",
+        metricValueOne: "\u4e3b\u5c42",
+        metricCopyOne: "\u4e0a\u4f20\u7684\u6587\u6863\u4f1a\u6210\u4e3a\u5bf9\u8bdd\u53ef\u5f15\u7528\u548c\u603b\u7ed3\u7684\u8bc1\u636e\u5c42\u3002",
+        metricEyebrowTwo: "\u5904\u7406",
+        metricValueTwo: "\u7a33\u5b9a",
+        metricCopyTwo: "\u4e0a\u4f20\u533a\u57df\u4fdd\u6301\u5b89\u9759\uff0c\u8ba9\u6863\u6848\u5217\u8868\u66f4\u5bb9\u6613\u626b\u8bfb\u3002",
+        metricEyebrowThree: "\u64cd\u4f5c",
+        metricValueThree: "\u5c31\u7eea",
+        metricCopyThree: "\u65b0\u6587\u4ef6\u5165\u5e93\u540e\uff0c\u540e\u7eed\u5bf9\u8bdd\u5c31\u80fd\u7ee7\u7eed\u5f15\u7528\u5b83\u3002",
       },
     },
     roles: {
@@ -58,7 +144,7 @@ const translations = {
     sourcesLabel: "\u4e3b\u6765\u6e90",
     status: {
       ready: "\u51c6\u5907\u5c31\u7eea\u3002",
-      asking: "\u6b63\u5728\u7ed3\u5408\u6700\u8fd1\u5bf9\u8bdd\u751f\u6210\u56de\u7b54...",
+      asking: "\u601d\u8003\u4e2d...",
       failed: "\u8bf7\u6c42\u5931\u8d25\u3002",
       unavailable: "\u670d\u52a1\u6682\u4e0d\u53ef\u7528\u3002",
       empty: "\u8bf7\u5148\u8f93\u5165\u95ee\u9898\u3002",
@@ -99,6 +185,8 @@ const translations = {
       loading: "\u6b63\u5728\u8bfb\u53d6\u6587\u4ef6\u5217\u8868...",
       failed: "\u8bfb\u53d6\u6587\u4ef6\u5217\u8868\u5931\u8d25\u3002",
       uploaded: "\u6dfb\u52a0\u65f6\u95f4",
+      chunks: "\u5207\u7247",
+      source: "\u6765\u6e90",
       seed: "\u521d\u59cb\u6587\u4ef6",
       unknown: "\u672a\u77e5",
       confirmDelete: (name) => `\u786e\u8ba4\u5220\u9664 ${name} \u5417\uff1f\u8be5\u6587\u4ef6\u4f1a\u4ece\u77e5\u8bc6\u5e93\u548c\u5411\u91cf\u5e93\u4e2d\u79fb\u9664\u3002`,
@@ -108,44 +196,120 @@ const translations = {
     localeLabel: "Chinese",
     localeLabelShort: "English",
     brandSubline: "Local Knowledge Workbench",
+    common: {
+      primaryNavAria: "Primary navigation",
+      localeSwitchAria: "Language switcher",
+      settings: "Settings",
+      support: "Support",
+      userName: "askRAG Console",
+      userMeta: "Local knowledge workspace",
+      notifications: "Notifications",
+      history: "History",
+    },
     nav: {
       chat: "Chat",
       library: "Library",
+      memory: "Memory",
     },
     pages: {
       chat: {
         title: "askRAG Chat",
         heading: "askRAG Chat",
         eyebrow: "Chat",
-        hero: "Ask about the current knowledge base and read the answer with the primary source in one place.",
+        hero: "Current conversation workspace.",
+        utilityStatus: "Memory active",
+        utilityScope: "Chat workspace",
+        conversationsEyebrow: "Threads",
+        conversationsTitle: "Recent sessions",
+        newConversation: "New chat",
+        conversationsLoading: "Loading conversations...",
+        conversationsEmpty: "No conversations yet.",
+        conversationsReady: (count) => `${count} conversations loaded.`,
+        conversationsFailed: "Failed to load conversations.",
+        conversationCreating: "Creating a new chat...",
+        conversationOpening: "Opening conversation...",
+        conversationDeleting: "Deleting conversation...",
+        conversationFallbackTitle: "New chat",
+        deleteConversation: "Delete",
+        confirmDeleteConversation: (name) => `Delete ${name}? This will remove the conversation from the history list.`,
         transcriptLabel: "Conversation transcript",
         intro: "Enter a question to start chatting, or ask a follow-up about the previous turn.",
-        promptTitle: "Prompt",
-        promptText: "Ask one question at a time. The answer appears in the transcript.",
+        stageEyebrow: "Conversation",
+        stageTitle: "Keep the answer, source trail, and stream status in one focused workspace.",
+        stageLead: "The left rail keeps sessions close while the center column stays readable for replies and follow-ups.",
+        promptTitle: "Composer",
+        promptText: "Ask one question at a time. The answer streams into the center transcript.",
         questionLabel: "Question",
         placeholder: "What is Chroma used for?",
         submit: "Send",
+        webSearchLabel: "Web search",
+        webSearchOn: "On",
+        webSearchOff: "Off",
+        webSearchAriaOn: "Disable web search",
+        webSearchAriaOff: "Enable web search",
+        notesEyebrow: "Notes",
         notesTitle: "Tips",
         noteOne: "You can ask follow-up questions about the previous turn.",
         noteTwo: "Use the library page when you need to add new files.",
         noteThree: "The primary source appears below each answer.",
+        routingEyebrow: "Source trail",
+        routingTitle: "Primary source",
+        routingText: "Keep the topic focused so the evidence path stays clear.",
+        livePill: "Live",
+        streamingPill: "Streaming",
+        stateTitle: "Response state",
+        stateText: "Replies stream into the center column while source chips stay attached to the answer bubble.",
+        conversationMeta: (count, timeText) => {
+          const parts = [];
+          if (count > 0) {
+            parts.push(`${count} messages`);
+          }
+          if (timeText) {
+            parts.push(timeText);
+          }
+          return parts.join(" · ");
+        },
       },
       library: {
         title: "askRAG Library",
-        heading: "Library",
+        heading: "Knowledge Base",
         eyebrow: "Library",
         hero: "Add files here to expand what chat can answer.",
-        uploadTitle: "Upload document",
-        uploadText: "Upload <span class=\"mono\">.txt</span> or <span class=\"mono\">.md</span> files.",
-        filePickerText: "Choose a text file",
-        uploadSubmit: "Upload",
+        utilityStatus: "Memory active",
+        utilityScope: "Document workspace",
+        searchPlaceholder: "Search knowledge base...",
+        searchAria: "Search knowledge base",
+        sidebarEyebrow: "Archive",
+        sidebarTitle: "Added files",
+        sidebarCopy: "This panel shows the files currently available to chat.",
+        sidebarAction: "Library workflow",
+        heroMetaLabel: "Workflow",
+        heroMetaText: "Bring in source files, keep the archive tidy, and make the document workspace ready for citation-backed chat.",
+        intakeEyebrow: "Intake",
+        uploadTitle: "Drop files to expand the knowledge base",
+        uploadText: "Currently supports <span class=\"mono\">TXT</span> and <span class=\"mono\">MD</span> text files",
+        filePickerText: "Browse Files",
+        uploadSubmit: "Start Upload",
         deleteAction: "Delete",
+        archiveEyebrow: "Archive",
         libraryTitle: "Added files",
         libraryText: "This panel shows the files currently available to chat.",
+        archiveSummaryLabel: "Use",
+        archiveSummaryText: "Every document listed here becomes part of the evidence library that Chat can cite after processing.",
+        notesEyebrow: "Guidance",
         notesTitle: "Tips",
         noteOne: "After upload, the file appears in the list on the right.",
         noteTwo: "New content becomes available in chat after processing.",
         noteThree: "Duplicate files are skipped automatically.",
+        metricEyebrowOne: "Evidence",
+        metricValueOne: "Primary",
+        metricCopyOne: "Uploaded documents become the source layer that chat can cite and summarize.",
+        metricEyebrowTwo: "Processing",
+        metricValueTwo: "Steady",
+        metricCopyTwo: "The upload surface stays quiet so the archive feels handled rather than crowded.",
+        metricEyebrowThree: "Action",
+        metricValueThree: "Ready",
+        metricCopyThree: "Drop in a file to start a new citation trail for future answers.",
       },
     },
     roles: {
@@ -155,7 +319,7 @@ const translations = {
     sourcesLabel: "Primary source",
     status: {
       ready: "Ready.",
-      asking: "Generating an answer with recent context...",
+      asking: "Thinking...",
       failed: "Request failed.",
       unavailable: "Service unavailable.",
       empty: "Enter a question before sending.",
@@ -196,6 +360,8 @@ const translations = {
       loading: "Loading file list...",
       failed: "Failed to load file list.",
       uploaded: "Added",
+      chunks: "Chunks",
+      source: "Source",
       seed: "Seed file",
       unknown: "Unknown",
       confirmDelete: (name) => `Delete ${name}? This removes the file from the library and the vector store.`,
@@ -206,17 +372,42 @@ const translations = {
 const pageConfig = {
   chat: {
     titleElement: document.querySelector("h1"),
+    conversationsEyebrow: document.querySelector("#conversationsEyebrow"),
+    conversationsTitle: document.querySelector("#conversationsTitle"),
+    newConversationButton: document.querySelector("#newConversationButton"),
+    newConversationButtonLabel: document.querySelector("#newConversationButtonLabel"),
+    conversationRailStatus: document.querySelector("#conversationRailStatus"),
+    conversationList: document.querySelector("#conversationList"),
+    statusPill: document.querySelector("#chatStatusPill"),
+    scopePill: document.querySelector("#chatScopePill"),
     eyebrowText: document.querySelector("#eyebrowText"),
     heroText: document.querySelector("#heroText"),
+    stageEyebrow: document.querySelector("#stageEyebrow"),
+    stageTitle: document.querySelector("#stageTitle"),
+    stageLead: document.querySelector("#stageLead"),
     transcriptPanel: document.querySelector("#transcriptPanel"),
     introMessage: document.querySelector("#introMessage"),
     promptTitle: document.querySelector("#promptTitle"),
     promptText: document.querySelector("#promptText"),
     questionLabel: document.querySelector("#questionLabel"),
+    submitButtonLabel: document.querySelector("#submitButtonLabel"),
+    webSearchToggleButton: document.querySelector("#webSearchToggleButton"),
+    webSearchToggleLabel: document.querySelector("#webSearchToggleLabel"),
+    webSearchToggleState: document.querySelector("#webSearchToggleState"),
+    notesEyebrow: document.querySelector("#notesEyebrow"),
     notesTitle: document.querySelector("#notesTitle"),
     noteOne: document.querySelector("#noteOne"),
     noteTwo: document.querySelector("#noteTwo"),
     noteThree: document.querySelector("#noteThree"),
+    routingEyebrow: document.querySelector("#routingEyebrow"),
+    routingTitle: document.querySelector("#routingTitle"),
+    routingText: document.querySelector("#routingText"),
+    livePill: document.querySelector("#livePill"),
+    streamingPill: document.querySelector("#streamingPill"),
+    stateTitle: document.querySelector("#stateTitle"),
+    stateText: document.querySelector("#stateText"),
+    notificationsButton: document.querySelector("#chatNotificationsButton"),
+    historyButton: document.querySelector("#chatHistoryButton"),
     form: document.querySelector("#chatForm"),
     input: document.querySelector("#questionInput"),
     messageList: document.querySelector("#messageList"),
@@ -226,17 +417,44 @@ const pageConfig = {
   },
   library: {
     titleElement: document.querySelector("h1"),
+    statusPill: document.querySelector("#libraryStatusPill"),
+    scopePill: document.querySelector("#libraryScopePill"),
     eyebrowText: document.querySelector("#eyebrowText"),
     heroText: document.querySelector("#heroText"),
+    sidebarEyebrow: document.querySelector("#librarySidebarEyebrow"),
+    sidebarTitle: document.querySelector("#librarySidebarTitle"),
+    sidebarCopy: document.querySelector("#librarySidebarCopy"),
+    sidebarAction: document.querySelector("#librarySidebarAction"),
+    heroMetaLabel: document.querySelector("#heroMetaLabel"),
+    heroMetaText: document.querySelector("#heroMetaText"),
+    intakeEyebrow: document.querySelector("#intakeEyebrow"),
     uploadTitle: document.querySelector("#uploadTitle"),
     uploadText: document.querySelector("#uploadText"),
     filePickerText: document.querySelector("#filePickerText"),
+    searchLabel: document.querySelector("#librarySearchLabel"),
+    searchInput: document.querySelector("#librarySearchInput"),
+    archiveEyebrow: document.querySelector("#archiveEyebrow"),
     libraryTitle: document.querySelector("#libraryTitle"),
     libraryText: document.querySelector("#libraryText"),
+    archiveSummaryLabel: document.querySelector("#archiveSummaryLabel"),
+    archiveSummaryText: document.querySelector("#archiveSummaryText"),
+    notesEyebrow: document.querySelector("#notesEyebrow"),
     notesTitle: document.querySelector("#notesTitle"),
     noteOne: document.querySelector("#noteOne"),
     noteTwo: document.querySelector("#noteTwo"),
     noteThree: document.querySelector("#noteThree"),
+    metricEyebrowOne: document.querySelector("#metricEyebrowOne"),
+    metricValueOne: document.querySelector("#metricValueOne"),
+    metricCopyOne: document.querySelector("#metricCopyOne"),
+    metricEyebrowTwo: document.querySelector("#metricEyebrowTwo"),
+    metricValueTwo: document.querySelector("#metricValueTwo"),
+    metricCopyTwo: document.querySelector("#metricCopyTwo"),
+    metricEyebrowThree: document.querySelector("#metricEyebrowThree"),
+    metricValueThree: document.querySelector("#metricValueThree"),
+    metricCopyThree: document.querySelector("#metricCopyThree"),
+    uploadButtonLabel: document.querySelector("#uploadButtonLabel"),
+    notificationsButton: document.querySelector("#libraryNotificationsButton"),
+    historyButton: document.querySelector("#libraryHistoryButton"),
     uploadForm: document.querySelector("#uploadForm"),
     fileInput: document.querySelector("#fileInput"),
     uploadButton: document.querySelector("#uploadButton"),
@@ -250,19 +468,96 @@ let currentStatusKey = "ready";
 let currentUploadStatus = { key: "idle", value: "" };
 let documentCache = [];
 let conversationHistory = [];
+let conversationListCache = [];
+let activeConversationId = "";
+let chatBusy = false;
 let activeDeleteSource = "";
+let useWebSearch = readStoredWebSearch();
 
 function t() {
   return translations[currentLocale];
+}
+
+function readStoredLocale() {
+  try {
+    const value = window.localStorage.getItem(LOCALE_STORAGE_KEY);
+    return value === "zh" || value === "en" ? value : "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function writeStoredLocale(locale) {
+  try {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  } catch (error) {
+    // Ignore storage write failures.
+  }
+}
+
+function readStoredWebSearch() {
+  try {
+    const value = window.localStorage.getItem(WEB_SEARCH_STORAGE_KEY);
+    return value === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+function writeStoredWebSearch(enabled) {
+  try {
+    window.localStorage.setItem(WEB_SEARCH_STORAGE_KEY, enabled ? "true" : "false");
+  } catch (error) {
+    // Ignore storage write failures.
+  }
 }
 
 function getPageText() {
   return t().pages[page];
 }
 
+function readStoredConversationId() {
+  try {
+    return window.localStorage.getItem(ACTIVE_CONVERSATION_STORAGE_KEY) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function writeStoredConversationId(conversationId) {
+  try {
+    if (conversationId) {
+      window.localStorage.setItem(ACTIVE_CONVERSATION_STORAGE_KEY, conversationId);
+    } else {
+      window.localStorage.removeItem(ACTIVE_CONVERSATION_STORAGE_KEY);
+    }
+  } catch (error) {
+    // Ignore storage write failures and keep the in-memory selection.
+  }
+}
+
+function setActiveConversationId(conversationId) {
+  activeConversationId = String(conversationId || "").trim();
+  writeStoredConversationId(activeConversationId);
+}
+
+function setConversationRailStatus(message) {
+  const railStatus = pageConfig.chat.conversationRailStatus;
+  if (railStatus) {
+    railStatus.textContent = message || "";
+  }
+}
+
 function updateNavAndBrand() {
+  const commonText = t().common;
   if (brandSubline) {
     brandSubline.textContent = t().brandSubline;
+  }
+  if (primaryNav) {
+    primaryNav.setAttribute("aria-label", commonText.primaryNavAria);
+  }
+  if (localeSwitch) {
+    localeSwitch.setAttribute("aria-label", commonText.localeSwitchAria);
   }
   if (navChat) {
     navChat.textContent = t().nav.chat;
@@ -270,11 +565,45 @@ function updateNavAndBrand() {
   if (navLibrary) {
     navLibrary.textContent = t().nav.library;
   }
+  if (navMemory) {
+    navMemory.textContent = t().nav.memory;
+  }
   if (localeZhButton) {
     localeZhButton.textContent = t().localeLabel;
   }
   if (localeEnButton) {
     localeEnButton.textContent = t().localeLabelShort;
+  }
+  if (sidebarSettingsLabel) {
+    sidebarSettingsLabel.textContent = commonText.settings;
+  }
+  if (sidebarSupportLabel) {
+    sidebarSupportLabel.textContent = commonText.support;
+  }
+  if (sidebarUserName) {
+    sidebarUserName.textContent = commonText.userName;
+  }
+  if (sidebarUserMeta) {
+    sidebarUserMeta.textContent = commonText.userMeta;
+  }
+}
+
+function updateWebSearchToggle() {
+  const currentPage = pageConfig.chat;
+  if (!currentPage.webSearchToggleButton) {
+    return;
+  }
+  const text = t().pages.chat;
+  const enabled = Boolean(useWebSearch);
+  currentPage.webSearchToggleButton.classList.toggle("is-active", enabled);
+  currentPage.webSearchToggleButton.setAttribute("aria-pressed", enabled ? "true" : "false");
+  currentPage.webSearchToggleButton.setAttribute("aria-label", enabled ? text.webSearchAriaOn : text.webSearchAriaOff);
+  currentPage.webSearchToggleButton.setAttribute("title", enabled ? text.webSearchAriaOn : text.webSearchAriaOff);
+  if (currentPage.webSearchToggleLabel) {
+    currentPage.webSearchToggleLabel.textContent = text.webSearchLabel;
+  }
+  if (currentPage.webSearchToggleState) {
+    currentPage.webSearchToggleState.textContent = enabled ? text.webSearchOn : text.webSearchOff;
   }
 }
 
@@ -383,6 +712,93 @@ function formatUploadedAt(value) {
   }).format(date);
 }
 
+function getDocumentExtension(fileName = "") {
+  const normalized = String(fileName || "").trim().toLowerCase();
+  const dotIndex = normalized.lastIndexOf(".");
+  return dotIndex >= 0 ? normalized.slice(dotIndex + 1) : "";
+}
+
+function getDocumentTypeLabel(fileName = "") {
+  const extension = getDocumentExtension(fileName);
+  const zh = currentLocale === "zh";
+  if (extension === "pdf") {
+    return zh ? "PDF 文档" : "PDF Document";
+  }
+  if (extension === "doc" || extension === "docx") {
+    return zh ? "Word 文档" : "Word Document";
+  }
+  if (extension === "json") {
+    return zh ? "JSON 数据" : "JSON Data";
+  }
+  if (extension === "md") {
+    return zh ? "Markdown" : "Markdown";
+  }
+  if (extension === "txt") {
+    return zh ? "文本文件" : "Text File";
+  }
+  return zh ? "文件资产" : "File Asset";
+}
+
+function getDocumentIconGlyph(fileName = "") {
+  const extension = getDocumentExtension(fileName);
+  if (extension === "pdf") {
+    return "picture_as_pdf";
+  }
+  if (extension === "doc" || extension === "docx") {
+    return "description";
+  }
+  if (extension === "json") {
+    return "data_object";
+  }
+  if (extension === "md" || extension === "txt") {
+    return "article";
+  }
+  return "draft";
+}
+
+function getDocumentIconTone(fileName = "") {
+  const extension = getDocumentExtension(fileName);
+  if (extension === "pdf") {
+    return "is-pdf";
+  }
+  if (extension === "doc" || extension === "docx") {
+    return "is-doc";
+  }
+  if (extension === "json") {
+    return "is-json";
+  }
+  return "is-text";
+}
+
+function formatChunkCount(value) {
+  if (value === null || value === undefined || value === "") {
+    return t().library.unknown;
+  }
+  return currentLocale === "zh" ? `${value} 段` : `${value} chunks`;
+}
+
+function formatConversationTimestamp(value) {
+  if (!value) {
+    return "";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+  return new Intl.DateTimeFormat(currentLocale === "zh" ? "zh-CN" : "en-US", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getConversationMeta(conversation) {
+  const count = Number(conversation.message_count || 0);
+  const timeText = formatConversationTimestamp(conversation.updated_at || conversation.created_at);
+  return t().pages.chat.conversationMeta(count, timeText);
+}
+
 function scrollMessages() {
   if (pageConfig.chat.messageList) {
     pageConfig.chat.messageList.scrollTo({
@@ -398,37 +814,76 @@ function renderDocuments() {
     return;
   }
 
+  const assetCount = document.querySelector("#libraryAssetCount");
+
   const libraryText = t().library;
   const libraryPageText = t().pages.library;
+  const tableLabels =
+    currentLocale === "zh"
+      ? { name: "资产名称", type: "类型", modified: "修改时间", actions: "操作" }
+      : { name: "Asset Name", type: "Type", modified: "Modified", actions: "Actions" };
   if (documentCache.length === 0) {
     documentList.innerHTML = `<div class="document-empty">${libraryText.empty}</div>`;
+    if (assetCount) {
+      assetCount.textContent = currentLocale === "zh" ? "显示 0 个资产" : "Showing 0 assets";
+    }
     return;
   }
 
-  documentList.innerHTML = documentCache
+  const rows = documentCache
     .map((document) => {
       const isDeleting = activeDeleteSource === document.source;
+      const iconGlyph = getDocumentIconGlyph(document.file_name);
+      const iconTone = getDocumentIconTone(document.file_name);
+      const docType = getDocumentTypeLabel(document.file_name);
       return `
-        <article class="document-item">
-          <div class="document-row">
-            <div class="document-name">${document.file_name}</div>
-            <div class="document-actions">
-              <button
-                type="button"
-                class="button-danger document-delete"
-                data-source="${document.source}"
-                data-file-name="${document.file_name}"
-                ${isDeleting ? "disabled" : ""}
-              >${libraryPageText.deleteAction}</button>
+        <div class="document-table-row">
+          <div class="document-cell document-cell-name">
+            <span class="document-file-icon ${iconTone}">
+              <span class="material-symbols-outlined">${iconGlyph}</span>
+            </span>
+            <div class="document-copy">
+              <div class="document-name">${document.file_name}</div>
+              <div class="document-source mono">${document.source || libraryText.unknown}</div>
             </div>
           </div>
-          <div class="document-meta">
-            <div class="doc-meta"><span class="doc-meta-label">${libraryText.uploaded}</span><span class="doc-meta-value">${formatUploadedAt(document.uploaded_at)}</span></div>
+          <div class="document-cell">${docType}</div>
+          <div class="document-cell">${formatChunkCount(document.chunk_count)}</div>
+          <div class="document-cell">${formatUploadedAt(document.uploaded_at)}</div>
+          <div class="document-cell document-cell-actions">
+            <button
+              type="button"
+              class="document-delete document-delete-icon"
+              data-source="${document.source}"
+              data-file-name="${document.file_name}"
+              aria-label="${libraryPageText.deleteAction}"
+              title="${libraryPageText.deleteAction}"
+              ${isDeleting ? "disabled" : ""}
+            ><span class="material-symbols-outlined">delete</span></button>
           </div>
-        </article>
+        </div>
       `;
     })
     .join("");
+
+  documentList.innerHTML = `
+    <div class="document-table">
+      <div class="document-table-head">
+        <div class="document-table-row">
+          <div class="document-cell">${tableLabels.name}</div>
+          <div class="document-cell">${tableLabels.type}</div>
+          <div class="document-cell">${libraryText.chunks}</div>
+          <div class="document-cell">${tableLabels.modified}</div>
+          <div class="document-cell">${tableLabels.actions}</div>
+        </div>
+      </div>
+      <div class="document-table-body">${rows}</div>
+    </div>
+  `;
+
+  if (assetCount) {
+    assetCount.textContent = currentLocale === "zh" ? `显示 ${documentCache.length} 个资产` : `Showing ${documentCache.length} assets`;
+  }
 }
 
 function applyLocale(locale) {
@@ -440,51 +895,184 @@ function applyLocale(locale) {
   document.title = text.title;
   updateNavAndBrand();
 
-  currentPage.titleElement.textContent = text.heading;
-  currentPage.eyebrowText.textContent = text.eyebrow;
-  currentPage.heroText.textContent = text.hero;
+  if (currentPage.titleElement) {
+    currentPage.titleElement.textContent = text.heading;
+  }
+  if (currentPage.eyebrowText) {
+    currentPage.eyebrowText.textContent = text.eyebrow;
+  }
+  if (currentPage.heroText) {
+    currentPage.heroText.textContent = text.hero;
+  }
 
   if (page === "chat") {
-    currentPage.transcriptPanel.setAttribute("aria-label", text.transcriptLabel);
-    const introArticle = currentPage.introMessage.closest(".message");
+    if (currentPage.conversationsEyebrow) {
+      currentPage.conversationsEyebrow.textContent = text.conversationsEyebrow;
+    }
+    if (currentPage.conversationsTitle) {
+      currentPage.conversationsTitle.textContent = text.conversationsTitle;
+    }
+    if (currentPage.newConversationButtonLabel) {
+      currentPage.newConversationButtonLabel.textContent = text.newConversation;
+    }
+    if (currentPage.statusPill) {
+      currentPage.statusPill.textContent = text.utilityStatus;
+    }
+    if (currentPage.scopePill) {
+      currentPage.scopePill.textContent = text.utilityScope;
+    }
+    if (currentPage.stageEyebrow) {
+      currentPage.stageEyebrow.textContent = text.stageEyebrow;
+    }
+    if (currentPage.stageTitle) {
+      currentPage.stageTitle.textContent = text.stageTitle;
+    }
+    if (currentPage.stageLead) {
+      currentPage.stageLead.textContent = text.stageLead;
+    }
+    if (currentPage.transcriptPanel) {
+      currentPage.transcriptPanel.setAttribute("aria-label", text.transcriptLabel);
+    }
+    const introArticle = currentPage.messageList.querySelector(".message-intro");
     if (introArticle) {
       introArticle.dataset.rawText = text.intro;
       renderMessageContent(introArticle);
-    } else {
+    } else if (currentPage.introMessage) {
       currentPage.introMessage.innerHTML = `<p>${text.intro}</p>`;
     }
-    currentPage.promptTitle.textContent = text.promptTitle;
-    currentPage.promptText.textContent = text.promptText;
-    currentPage.questionLabel.textContent = text.questionLabel;
-    currentPage.input.placeholder = text.placeholder;
-    currentPage.submitButton.textContent = text.submit;
-    currentPage.notesTitle.textContent = text.notesTitle;
-    currentPage.noteOne.textContent = text.noteOne;
-    currentPage.noteTwo.textContent = text.noteTwo;
-    currentPage.noteThree.textContent = text.noteThree;
+    if (currentPage.promptTitle) {
+      currentPage.promptTitle.textContent = text.promptTitle;
+    }
+    if (currentPage.promptText) {
+      currentPage.promptText.textContent = text.promptText;
+    }
+    if (currentPage.questionLabel) {
+      currentPage.questionLabel.textContent = text.questionLabel;
+    }
+    if (currentPage.input) {
+      currentPage.input.placeholder = text.placeholder;
+    }
+    if (currentPage.submitButtonLabel) {
+      currentPage.submitButtonLabel.textContent = text.submit;
+    }
+    if (currentPage.webSearchToggleLabel) {
+      currentPage.webSearchToggleLabel.textContent = text.webSearchLabel;
+    }
+    if (currentPage.webSearchToggleState) {
+      currentPage.webSearchToggleState.textContent = useWebSearch ? text.webSearchOn : text.webSearchOff;
+    }
+    if (currentPage.notesEyebrow) {
+      currentPage.notesEyebrow.textContent = text.notesEyebrow;
+    }
+    if (currentPage.notesTitle) {
+      currentPage.notesTitle.textContent = text.notesTitle;
+    }
+    if (currentPage.noteOne) {
+      currentPage.noteOne.textContent = text.noteOne;
+    }
+    if (currentPage.noteTwo) {
+      currentPage.noteTwo.textContent = text.noteTwo;
+    }
+    if (currentPage.noteThree) {
+      currentPage.noteThree.textContent = text.noteThree;
+    }
+    if (currentPage.routingEyebrow) {
+      currentPage.routingEyebrow.textContent = text.routingEyebrow;
+    }
+    if (currentPage.routingTitle) {
+      currentPage.routingTitle.textContent = text.routingTitle;
+    }
+    if (currentPage.routingText) {
+      currentPage.routingText.textContent = text.routingText;
+    }
+    if (currentPage.livePill) {
+      currentPage.livePill.textContent = text.livePill;
+    }
+    if (currentPage.streamingPill) {
+      currentPage.streamingPill.textContent = text.streamingPill;
+    }
+    if (currentPage.stateTitle) {
+      currentPage.stateTitle.textContent = text.stateTitle;
+    }
+    if (currentPage.stateText) {
+      currentPage.stateText.textContent = text.stateText;
+    }
+    currentPage.notificationsButton?.setAttribute("aria-label", t().common.notifications);
+    currentPage.historyButton?.setAttribute("aria-label", t().common.history);
     renderRoleLabels();
     renderSourceLabels();
     document.querySelectorAll(".message").forEach((message) => renderMessageContent(message));
+    renderConversationList();
+    if (conversationListCache.length) {
+      setConversationRailStatus(text.conversationsReady(conversationListCache.length));
+    }
     setStatus(currentStatusKey);
   }
 
   if (page === "library") {
+    currentPage.statusPill.textContent = text.utilityStatus;
+    currentPage.scopePill.textContent = text.utilityScope;
+    currentPage.sidebarEyebrow.textContent = text.sidebarEyebrow;
+    currentPage.sidebarTitle.textContent = text.sidebarTitle;
+    currentPage.sidebarCopy.textContent = text.sidebarCopy;
+    currentPage.sidebarAction.textContent = text.sidebarAction;
+    currentPage.heroMetaLabel.textContent = text.heroMetaLabel;
+    currentPage.heroMetaText.textContent = text.heroMetaText;
+    currentPage.intakeEyebrow.textContent = text.intakeEyebrow;
     currentPage.uploadTitle.textContent = text.uploadTitle;
     currentPage.uploadText.innerHTML = text.uploadText;
     currentPage.filePickerText.textContent = text.filePickerText;
-    currentPage.uploadButton.textContent = text.uploadSubmit;
+    currentPage.uploadButtonLabel.textContent = text.uploadSubmit;
+    currentPage.searchInput.placeholder = text.searchPlaceholder;
+    currentPage.searchLabel.setAttribute("aria-label", text.searchAria);
+    currentPage.archiveEyebrow.textContent = text.archiveEyebrow;
     currentPage.libraryTitle.textContent = text.libraryTitle;
     currentPage.libraryText.textContent = text.libraryText;
+    currentPage.archiveSummaryLabel.textContent = text.archiveSummaryLabel;
+    currentPage.archiveSummaryText.textContent = text.archiveSummaryText;
+    currentPage.notesEyebrow.textContent = text.notesEyebrow;
     currentPage.notesTitle.textContent = text.notesTitle;
     currentPage.noteOne.textContent = text.noteOne;
     currentPage.noteTwo.textContent = text.noteTwo;
     currentPage.noteThree.textContent = text.noteThree;
+    if (currentPage.metricEyebrowOne) {
+      currentPage.metricEyebrowOne.textContent = text.metricEyebrowOne;
+    }
+    if (currentPage.metricValueOne) {
+      currentPage.metricValueOne.textContent = text.metricValueOne;
+    }
+    if (currentPage.metricCopyOne) {
+      currentPage.metricCopyOne.textContent = text.metricCopyOne;
+    }
+    if (currentPage.metricEyebrowTwo) {
+      currentPage.metricEyebrowTwo.textContent = text.metricEyebrowTwo;
+    }
+    if (currentPage.metricValueTwo) {
+      currentPage.metricValueTwo.textContent = text.metricValueTwo;
+    }
+    if (currentPage.metricCopyTwo) {
+      currentPage.metricCopyTwo.textContent = text.metricCopyTwo;
+    }
+    if (currentPage.metricEyebrowThree) {
+      currentPage.metricEyebrowThree.textContent = text.metricEyebrowThree;
+    }
+    if (currentPage.metricValueThree) {
+      currentPage.metricValueThree.textContent = text.metricValueThree;
+    }
+    if (currentPage.metricCopyThree) {
+      currentPage.metricCopyThree.textContent = text.metricCopyThree;
+    }
+    currentPage.notificationsButton?.setAttribute("aria-label", t().common.notifications);
+    currentPage.historyButton?.setAttribute("aria-label", t().common.history);
     renderDocuments();
     setUploadStatus(currentUploadStatus.key, currentUploadStatus.value);
   }
 
   localeZhButton.classList.toggle("is-active", locale === "zh");
   localeEnButton.classList.toggle("is-active", locale === "en");
+  updateWebSearchToggle();
+  window.WorkspacePanels?.setLocale?.(locale);
+  writeStoredLocale(locale);
 }
 
 function escapeHtml(text) {
@@ -624,7 +1212,17 @@ function renderMessageContent(article) {
   }
 }
 
-function createMessage(roleKey, text = "", sources = []) {
+function setMessageThinking(article, isThinking) {
+  if (!article) {
+    return;
+  }
+  const thinking = Boolean(isThinking);
+  article.classList.toggle("is-thinking", thinking);
+  article.dataset.thinking = thinking ? "true" : "false";
+  article.setAttribute("aria-busy", thinking ? "true" : "false");
+}
+
+function buildMessageArticle(roleKey) {
   const fragment = pageConfig.chat.template.content.cloneNode(true);
   const article = fragment.querySelector(".message");
   const roleEl = fragment.querySelector(".message-role");
@@ -633,10 +1231,19 @@ function createMessage(roleKey, text = "", sources = []) {
   article.dataset.rawText = "";
   article.classList.add(roleKey === "user" ? "message-user" : "message-assistant");
   roleEl.textContent = t().roles[roleKey] || roleKey;
+  return article;
+}
 
-  pageConfig.chat.messageList.appendChild(fragment);
-  setMessageText(article, text);
+function populateMessageArticle(article, text = "", sources = [], { scroll = false } = {}) {
+  setMessageText(article, text, scroll);
   setMessageSources(article, sources);
+}
+
+function createMessage(roleKey, text = "", sources = []) {
+  const article = buildMessageArticle(roleKey);
+  pageConfig.chat.messageList.appendChild(article);
+  populateMessageArticle(article, text, sources, { scroll: false });
+  setMessageThinking(article, roleKey === "assistant" && !String(text || "").trim());
   scrollMessages();
   return article;
 }
@@ -649,15 +1256,23 @@ function getMessageSources(article) {
   return Array.from(article.querySelectorAll(".source-chip")).map((chip) => chip.textContent || "").filter(Boolean);
 }
 
-function setMessageText(article, text) {
+function setMessageText(article, text, shouldScroll = true) {
   article.dataset.rawText = text || "";
   renderMessageContent(article);
-  scrollMessages();
+  if (String(text || "").trim()) {
+    setMessageThinking(article, false);
+  }
+  if (shouldScroll) {
+    scrollMessages();
+  }
 }
 
 function appendMessageText(article, text) {
   article.dataset.rawText = `${article.dataset.rawText || ""}${text || ""}`;
   renderMessageContent(article);
+  if (String(article.dataset.rawText || "").trim()) {
+    setMessageThinking(article, false);
+  }
   scrollMessages();
 }
 
@@ -682,17 +1297,104 @@ function setMessageSources(article, sources = []) {
   }
 }
 
+function createIntroMessage() {
+  const article = buildMessageArticle("assistant");
+  article.classList.add("message-intro");
+  pageConfig.chat.messageList.replaceChildren(article);
+  populateMessageArticle(article, getPageText().intro, [], { scroll: false });
+  return article;
+}
+
+function syncConversationHistory(messages = []) {
+  conversationHistory = messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => ({
+      role: message.role,
+      content: message.content || "",
+      sources: Array.isArray(message.sources) ? message.sources : [],
+    }));
+}
+
+function renderConversationTranscript(messages = []) {
+  const messageList = pageConfig.chat.messageList;
+  if (!messageList) {
+    return;
+  }
+  messageList.innerHTML = "";
+  if (!messages.length) {
+    createIntroMessage();
+    return;
+  }
+  for (const message of messages) {
+    const article = buildMessageArticle(message.role || "assistant");
+    messageList.appendChild(article);
+    populateMessageArticle(article, message.content || "", Array.isArray(message.sources) ? message.sources : [], { scroll: false });
+  }
+  scrollMessages();
+}
+
+function renderConversationList() {
+  const { conversationList } = pageConfig.chat;
+  if (!conversationList) {
+    return;
+  }
+  const chatText = t().pages.chat;
+  if (!conversationListCache.length) {
+    conversationList.innerHTML = `<div class="conversation-empty">${chatText.conversationsEmpty}</div>`;
+    return;
+  }
+  conversationList.innerHTML = conversationListCache
+    .map((conversation) => {
+      const isActive = conversation.id === activeConversationId;
+      const rawTitle = String(conversation.title || "").trim();
+      const title =
+        !rawTitle || rawTitle === "New chat" || rawTitle === "\u65b0\u5bf9\u8bdd"
+          ? chatText.conversationFallbackTitle
+          : rawTitle;
+      const meta = getConversationMeta(conversation) || chatText.promptText;
+      return `
+        <div class="conversation-item${isActive ? " is-active" : ""}">
+          <button
+            type="button"
+            class="conversation-item-main"
+            data-conversation-id="${escapeHtml(conversation.id || "")}"
+            ${chatBusy ? "disabled" : ""}
+            ${isActive ? 'aria-current="true"' : ""}
+          >
+            <span class="conversation-item-title">${escapeHtml(title)}</span>
+            <span class="conversation-item-meta">${escapeHtml(meta)}</span>
+          </button>
+          <button
+            type="button"
+            class="conversation-item-delete button-danger"
+            data-conversation-delete-id="${escapeHtml(conversation.id || "")}"
+            data-conversation-delete-title="${escapeHtml(title)}"
+            aria-label="${escapeHtml(chatText.deleteConversation)}"
+            title="${escapeHtml(chatText.deleteConversation)}"
+            ${chatBusy ? "disabled" : ""}
+          ><span class="material-symbols-outlined">delete</span></button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
 function getRecentHistory() {
   return conversationHistory.slice(-MAX_HISTORY_MESSAGES);
 }
 
 function setChatBusy(isBusy) {
+  chatBusy = isBusy;
   if (pageConfig.chat.submitButton) {
     pageConfig.chat.submitButton.disabled = isBusy;
   }
   if (pageConfig.chat.input) {
     pageConfig.chat.input.disabled = isBusy;
   }
+  if (pageConfig.chat.newConversationButton) {
+    pageConfig.chat.newConversationButton.disabled = isBusy;
+  }
+  renderConversationList();
 }
 
 function setUploadBusy(isBusy) {
@@ -701,6 +1403,139 @@ function setUploadBusy(isBusy) {
   }
   if (pageConfig.library.fileInput) {
     pageConfig.library.fileInput.disabled = isBusy;
+  }
+}
+
+async function fetchConversationList() {
+  const response = await fetch("/conversations", { headers: { Accept: "application/json" } });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.detail || t().pages.chat.conversationsFailed);
+  }
+  conversationListCache = Array.isArray(payload.conversations) ? payload.conversations : [];
+  renderConversationList();
+  setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
+  return conversationListCache;
+}
+
+async function loadConversation(conversationId, { updateStatus = true } = {}) {
+  const normalizedId = String(conversationId || "").trim();
+  if (!normalizedId) {
+    setActiveConversationId("");
+    syncConversationHistory([]);
+    createIntroMessage();
+    renderConversationList();
+    return;
+  }
+  if (updateStatus) {
+    setConversationRailStatus(t().pages.chat.conversationOpening);
+  }
+  const response = await fetch(`/conversations/${encodeURIComponent(normalizedId)}`, {
+    headers: { Accept: "application/json" },
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.detail || t().pages.chat.conversationsFailed);
+  }
+  const conversation = payload.conversation || {};
+  const messages = Array.isArray(payload.messages) ? payload.messages : [];
+  setActiveConversationId(conversation.id || normalizedId);
+  syncConversationHistory(messages);
+  renderConversationTranscript(messages);
+  renderConversationList();
+  setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
+}
+
+async function deleteConversation(conversationId, conversationTitle) {
+  const normalizedId = String(conversationId || "").trim();
+  if (!normalizedId) {
+    return false;
+  }
+  const normalizedTitle = String(conversationTitle || "").trim() || t().pages.chat.conversationFallbackTitle;
+  if (!window.confirm(t().pages.chat.confirmDeleteConversation(normalizedTitle))) {
+    return false;
+  }
+
+  const deletingActiveConversation = normalizedId === activeConversationId;
+  setChatBusy(true);
+  setConversationRailStatus(t().pages.chat.conversationDeleting);
+  try {
+    const response = await fetch(`/conversations/${encodeURIComponent(normalizedId)}`, {
+      method: "DELETE",
+      headers: { Accept: "application/json" },
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.detail || t().pages.chat.conversationsFailed);
+    }
+
+    await fetchConversationList();
+    if (deletingActiveConversation) {
+      const nextConversationId = conversationListCache[0]?.id || "";
+      if (nextConversationId) {
+        await loadConversation(nextConversationId, { updateStatus: false });
+      } else {
+        setActiveConversationId("");
+        syncConversationHistory([]);
+        createIntroMessage();
+        setConversationRailStatus(t().pages.chat.conversationsEmpty);
+      }
+    } else {
+      setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
+    }
+    return true;
+  } catch (error) {
+    setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
+    return false;
+  } finally {
+    setChatBusy(false);
+  }
+}
+
+async function createNewConversation() {
+  setConversationRailStatus(t().pages.chat.conversationCreating);
+  const response = await fetch("/conversations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({}),
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.detail || t().pages.chat.conversationsFailed);
+  }
+  const conversation = payload.conversation || {};
+  setActiveConversationId(conversation.id || "");
+  syncConversationHistory([]);
+  createIntroMessage();
+  await fetchConversationList();
+}
+
+async function initializeChatSessions() {
+  try {
+    await fetchConversationList();
+    const storedId = readStoredConversationId();
+    const candidateId =
+      (storedId && conversationListCache.some((conversation) => conversation.id === storedId) && storedId) ||
+      conversationListCache[0]?.id ||
+      "";
+    if (candidateId) {
+      await loadConversation(candidateId, { updateStatus: false });
+    } else {
+      setActiveConversationId("");
+      syncConversationHistory([]);
+      createIntroMessage();
+      setConversationRailStatus(t().pages.chat.conversationsEmpty);
+    }
+  } catch (error) {
+    conversationListCache = [];
+    setActiveConversationId("");
+    syncConversationHistory([]);
+    createIntroMessage();
+    renderConversationList();
+    setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
   }
 }
 
@@ -772,6 +1607,13 @@ function parseSseEvent(rawEvent) {
 
 function handleStreamEvent(rawEvent, assistantMessage) {
   const { eventName, payload } = parseSseEvent(rawEvent);
+  if (eventName === "conversation") {
+    if (payload.conversation_id) {
+      setActiveConversationId(payload.conversation_id);
+      renderConversationList();
+    }
+    return false;
+  }
   if (eventName === "sources") {
     setMessageSources(assistantMessage, payload.sources || []);
     if ((payload.sources || []).length && assistantMessage.dataset.activeTool === "web_search") {
@@ -796,10 +1638,12 @@ function handleStreamEvent(rawEvent, assistantMessage) {
     return false;
   }
   if (eventName === "error") {
+    setMessageThinking(assistantMessage, false);
     setMessageToolStatus(assistantMessage, t().toolStatus.failed, "failed");
     throw new Error(payload.detail || t().status.failed);
   }
   if (eventName === "done") {
+    setMessageThinking(assistantMessage, false);
     const tone = assistantMessage.dataset.toolStatusTone || "";
     if (assistantMessage.dataset.activeTool !== "web_search" && tone && tone !== "failed") {
       setMessageToolStatus(assistantMessage, "", "pending");
@@ -816,7 +1660,12 @@ async function streamAnswer(question, history, assistantMessage) {
       "Content-Type": "application/json",
       Accept: "text/event-stream",
     },
-    body: JSON.stringify({ question, history }),
+    body: JSON.stringify({
+      question,
+      history,
+      conversation_id: activeConversationId || null,
+      use_web_search: useWebSearch,
+    }),
   });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
@@ -858,10 +1707,65 @@ async function streamAnswer(question, history, assistantMessage) {
 }
 
 function initChatPage() {
-  const { form, input } = pageConfig.chat;
-  if (!form || !input) {
+  const { form, input, conversationList, newConversationButton, webSearchToggleButton } = pageConfig.chat;
+  if (!form || !input || !conversationList || !newConversationButton) {
     return;
   }
+
+  if (webSearchToggleButton) {
+    webSearchToggleButton.addEventListener("click", () => {
+      useWebSearch = !useWebSearch;
+      writeStoredWebSearch(useWebSearch);
+      updateWebSearchToggle();
+    });
+  }
+
+  newConversationButton.addEventListener("click", async () => {
+    if (chatBusy) {
+      return;
+    }
+    try {
+      setChatBusy(true);
+      await createNewConversation();
+      setStatus("ready");
+      input.focus();
+    } catch (error) {
+      setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
+    } finally {
+      setChatBusy(false);
+    }
+  });
+
+  conversationList.addEventListener("click", async (event) => {
+    const deleteButton = event.target.closest("[data-conversation-delete-id]");
+    if (deleteButton && conversationList.contains(deleteButton)) {
+      if (chatBusy) {
+        return;
+      }
+      const conversationId = deleteButton.getAttribute("data-conversation-delete-id") || "";
+      const conversationTitle = deleteButton.getAttribute("data-conversation-delete-title") || "";
+      await deleteConversation(conversationId, conversationTitle);
+      return;
+    }
+
+    const item = event.target.closest("[data-conversation-id]");
+    if (!item || chatBusy) {
+      return;
+    }
+    const conversationId = item.getAttribute("data-conversation-id") || "";
+    if (!conversationId || conversationId === activeConversationId) {
+      return;
+    }
+    try {
+      setChatBusy(true);
+      await loadConversation(conversationId);
+      setStatus("ready");
+    } catch (error) {
+      setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
+    } finally {
+      setChatBusy(false);
+    }
+  });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -890,6 +1794,7 @@ function initChatPage() {
         { role: "user", content: question },
         { role: "assistant", content: assistantText, sources: getMessageSources(assistantMessage) },
       );
+      await fetchConversationList();
       setStatus("ready");
     } catch (error) {
       const detail = error instanceof Error ? error.message : t().status.failed;
@@ -905,6 +1810,8 @@ function initChatPage() {
       input.focus();
     }
   });
+
+  void initializeChatSessions();
 }
 
 function initLibraryPage() {
@@ -989,7 +1896,7 @@ function initLibraryPage() {
 localeZhButton?.addEventListener("click", () => applyLocale("zh"));
 localeEnButton?.addEventListener("click", () => applyLocale("en"));
 
-applyLocale("zh");
+applyLocale(readStoredLocale() || "zh");
 if (page === "chat") {
   initChatPage();
 } else if (page === "library") {

@@ -8,6 +8,11 @@ class RetrievalValidation:
     is_sufficient: bool
     reason: str
 
+    @property
+    def is_relevant(self) -> bool:
+        # Backward-compatible alias: this layer is used as the retrieval-relevance gate.
+        return self.is_sufficient
+
 
 @dataclass(slots=True)
 class ParentValidation:

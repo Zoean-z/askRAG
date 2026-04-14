@@ -1,4 +1,4 @@
-﻿import hashlib
+import hashlib
 import json
 import re
 from datetime import datetime, timezone
@@ -6,7 +6,7 @@ from pathlib import Path
 
 from langchain_core.documents import Document
 
-from app.rag import BASE_DIR, DOCS_DIR, SUPPORTED_EXTENSIONS, build_vector_store, get_vector_store, split_documents
+from app.rag import BASE_DIR, DOCS_DIR, SUPPORTED_EXTENSIONS, build_vector_store, get_vector_store, load_documents, split_documents
 
 REGISTRY_PATH = BASE_DIR / "data" / "document_registry.json"
 
@@ -63,6 +63,23 @@ def compute_chunk_count(text: str, source: str) -> int:
     return len(split_documents([document]))
 
 
+def _base_document_record(
+    *,
+    file_name: str,
+    source: str,
+    content: bytes,
+    uploaded_at: str | None,
+    chunk_count: int | None,
+) -> dict:
+    return {
+        "file_name": file_name,
+        "source": source,
+        "md5": compute_md5(content),
+        "uploaded_at": uploaded_at,
+        "chunk_count": chunk_count,
+    }
+
+
 def refresh_document_registry() -> list[dict]:
     existing_records = {record.get("source"): record for record in read_registry() if record.get("source")}
     records: list[dict] = []
@@ -81,13 +98,13 @@ def refresh_document_registry() -> list[dict]:
             chunk_count = compute_chunk_count(text, source)
 
         records.append(
-            {
-                "file_name": path.name,
-                "source": source,
-                "md5": compute_md5(content),
-                "uploaded_at": previous.get("uploaded_at"),
-                "chunk_count": chunk_count,
-            }
+            _base_document_record(
+                file_name=path.name,
+                source=source,
+                content=content,
+                uploaded_at=previous.get("uploaded_at"),
+                chunk_count=chunk_count,
+            )
         )
 
     records = sort_records(records)
@@ -96,13 +113,14 @@ def refresh_document_registry() -> list[dict]:
 
 
 def build_document_record(path: Path, content: bytes, uploaded_at: str | None, chunk_count: int | None) -> dict:
-    return {
-        "file_name": path.name,
-        "source": path.relative_to(BASE_DIR).as_posix(),
-        "md5": compute_md5(content),
-        "uploaded_at": uploaded_at,
-        "chunk_count": chunk_count,
-    }
+    source = path.relative_to(BASE_DIR).as_posix()
+    return _base_document_record(
+        file_name=path.name,
+        source=source,
+        content=content,
+        uploaded_at=uploaded_at,
+        chunk_count=chunk_count,
+    )
 
 
 def make_unique_path(filename: str) -> Path:
@@ -194,3 +212,20 @@ def delete_document(source: str) -> dict:
     remaining_records = [record for record in records if record.get("source") != source]
     write_registry(sort_records(remaining_records))
     return target
+
+
+def rebuild_vector_index() -> dict:
+    documents = load_documents()
+    chunks = split_documents(documents)
+    vector_store = get_vector_store()
+    existing_ids = vector_store.get().get("ids") or []
+    if existing_ids:
+        vector_store.delete(ids=existing_ids)
+    rebuilt = build_vector_store(chunks)
+    records = refresh_document_registry()
+    return {
+        "document_count": len(documents),
+        "chunk_count": len(chunks),
+        "collection_count": rebuilt._collection.count(),
+        "documents": records,
+    }

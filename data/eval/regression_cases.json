@@ -1,0 +1,92 @@
+[
+  {
+    "id": "route-summary-flow",
+    "kind": "tool_router",
+    "question": "summarize project_intro.txt",
+    "history": [],
+    "expect": {
+      "primary_tool": "local_doc_summary"
+    }
+  },
+  {
+    "id": "route-web-freshness",
+    "kind": "tool_router",
+    "question": "What is the latest OpenAI model today?",
+    "history": [],
+    "expect": {
+      "primary_tool": "web_search"
+    }
+  },
+  {
+    "id": "memory-low-risk",
+    "kind": "memory_extract",
+    "question": "Please reply in Chinese concisely.",
+    "answer": "project_intro.txt explains that Chroma is the local vector store.",
+    "sources": [
+      "data/docs/project_intro.txt"
+    ],
+    "expect": {
+      "memory_types": [
+        "pinned_preference",
+        "recent_task_state"
+      ]
+    }
+  },
+  {
+    "id": "memory-no-generic-long-term-promotion",
+    "kind": "memory_extract_absent",
+    "question": "What is Chroma used for?",
+    "answer": "Chroma stores local vectors for the project.",
+    "sources": [
+      "data/docs/project_intro.txt"
+    ],
+    "expect": {
+      "absent_memory_types": [
+        "approved_long_term_fact"
+      ]
+    }
+  },
+  {
+    "id": "memory-lane-recent-task-state",
+    "kind": "memory_lane_contract",
+    "memory_type": "recent_task_state",
+    "expect": {
+      "layer": "L1",
+      "scope": "cross_thread",
+      "short_lived": true
+    }
+  },
+  {
+    "id": "memory-lane-pinned-preference",
+    "kind": "memory_lane_contract",
+    "memory_type": "pinned_preference",
+    "expect": {
+      "layer": "L1",
+      "scope": "cross_thread",
+      "short_lived": false
+    }
+  },
+  {
+    "id": "openviking-runtime-boundary",
+    "kind": "openviking_runtime_contract",
+    "runtime": {
+      "health": {
+        "healthy": true,
+        "status": "ok"
+      }
+    },
+    "expect": {
+      "role": "memory_context_infrastructure",
+      "required_for": [
+        "assistant_memory",
+        "answer_time_context"
+      ],
+      "not_required_for": [
+        "document_upload",
+        "document_index_rebuild",
+        "chroma_document_retrieval"
+      ],
+      "healthy": true
+    }
+  }
+]

@@ -4,65 +4,119 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>askRAG Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/styles.css">
 </head>
 <body data-page="chat">
-  <div class="page-shell page-shell-chat">
-    <header class="topbar">
-      <a class="brandmark" href="/">
-        <span class="brandmark-name">askRAG</span>
-        <span id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</span>
-      </a>
-      <nav class="primary-nav" aria-label="Primary navigation">
-        <a id="navChat" class="nav-link is-active" href="/">Chat</a>
-        <a id="navLibrary" class="nav-link" href="/library">Library</a>
-      </nav>
-      <div class="locale-switch" aria-label="Language switcher">
-        <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
-        <button id="localeEn" class="locale-button" type="button">EN</button>
+  <div class="app-shell app-shell-chat">
+    <aside class="sidebar stitch-sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="material-symbols-outlined">chat_bubble</span>
+        </div>
+        <div class="brand-copy">
+          <div class="brandmark-name">askRAG</div>
+          <div id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</div>
+        </div>
       </div>
-    </header>
 
-    <main class="workspace workspace-chat workspace-chat-docked">
-      <section class="chat-stage">
-        <header class="chat-stage-header">
-          <div class="chat-stage-copy">
-            <p id="eyebrowText" class="eyebrow">Chat</p>
-            <h1>askRAG Chat</h1>
-            <p id="heroText" class="hero-text">Ask about the current knowledge base and read the answer with the primary source.</p>
+      <nav id="primaryNav" class="sidebar-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link is-active" href="/">
+          <span class="material-symbols-outlined nav-link-icon">chat_bubble</span>
+          <span id="navChatLabel" class="nav-link-label">Chat</span>
+        </a>
+        <a id="navLibrary" class="nav-link" href="/library">
+          <span class="material-symbols-outlined nav-link-icon">menu_book</span>
+          <span id="navLibraryLabel" class="nav-link-label">Library</span>
+        </a>
+        <a id="navMemory" class="nav-link" href="/memory">
+          <span class="material-symbols-outlined nav-link-icon">memory</span>
+          <span id="navMemoryLabel" class="nav-link-label">Memory</span>
+        </a>
+      </nav>
+
+      <section class="sidebar-section sidebar-section-session">
+        <div class="sidebar-section-header sidebar-section-header-compact">
+          <h2 id="conversationsTitle">Recent sessions</h2>
+          <p id="conversationsEyebrow" class="eyebrow">Threads</p>
+        </div>
+        <p id="conversationRailStatus" class="status-text sidebar-status" aria-live="polite">Loading conversations...</p>
+        <div id="conversationList" class="conversation-list" aria-live="polite"></div>
+      </section>
+
+      <footer class="sidebar-footer">
+        <button id="newConversationButton" class="button-primary sidebar-cta" type="button">
+          <span class="material-symbols-outlined">add</span>
+          <span id="newConversationButtonLabel">New chat</span>
+        </button>
+
+        <div class="sidebar-links">
+          <button id="settingsButton" class="sidebar-link" type="button">
+            <span class="material-symbols-outlined">settings</span>
+            <span id="sidebarSettingsLabel">Settings</span>
+          </button>
+          <button id="supportButton" class="sidebar-link" type="button">
+            <span class="material-symbols-outlined">help_outline</span>
+            <span id="sidebarSupportLabel">Support</span>
+          </button>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" aria-hidden="true">A</div>
+          <div>
+            <div id="sidebarUserName" class="sidebar-user-name">askRAG Console</div>
+            <div id="sidebarUserMeta" class="sidebar-user-meta">Pro Member</div>
           </div>
-          <div class="chat-stage-meta">
-            <section class="control-block chat-hints">
-              <h2 id="notesTitle">Notes</h2>
-              <ul class="notes-list notes-list-inline">
-                <li id="noteOne">Describe what you want to know.</li>
-                <li id="noteTwo">Upload files from the library page when needed.</li>
-                <li id="noteThree">The primary source appears below each answer.</li>
-              </ul>
+        </div>
+      </footer>
+    </aside>
+
+    <div class="stitch-shell">
+      <header class="stitch-header">
+        <div class="stitch-header-status">
+          <span id="chatStatusPill" class="status-pill">Memory active</span>
+          <span id="chatScopePill" class="status-pill status-pill-soft">KB: chat</span>
+        </div>
+
+        <div class="stitch-header-tools">
+          <label class="stitch-header-search">
+            <input type="text" placeholder="搜索会话..." aria-label="搜索会话">
+            <span class="material-symbols-outlined">search</span>
+          </label>
+          <div class="utility-actions">
+            <button id="chatNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
+              <span class="material-symbols-outlined">notifications</span>
+            </button>
+            <button id="chatHistoryButton" class="icon-button" type="button" aria-label="History">
+              <span class="material-symbols-outlined">history</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <main class="stitch-main">
+        <div class="stitch-scroll-area">
+          <div class="stitch-scroll-inner">
+            <section id="transcriptPanel" class="stitch-transcript" aria-label="Conversation transcript">
+              <div id="messageList" class="message-list message-list-chat">
+                <article class="message message-assistant message-intro" data-role-key="assistant">
+                  <div class="message-role">assistant</div>
+                  <div id="introMessage" class="message-body">
+                    <p>Enter a question to start.</p>
+                  </div>
+                </article>
+              </div>
             </section>
           </div>
-        </header>
+        </div>
+      </main>
 
-        <section id="transcriptPanel" class="transcript-panel transcript-panel-chat" aria-label="Conversation transcript">
-          <div id="messageList" class="message-list message-list-chat">
-            <article class="message message-assistant message-intro" data-role-key="assistant">
-              <div class="message-role">assistant</div>
-              <div id="introMessage" class="message-body">
-                <p>Enter a question to start.</p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <div class="chat-composer-shell">
-          <section class="chat-composer-meta">
-            <div class="control-block chat-prompt-copy">
-              <h2 id="promptTitle">Prompt</h2>
-              <p id="promptText">Ask one question at a time.</p>
-            </div>
-          </section>
-
-          <form id="chatForm" class="composer composer-docked" novalidate>
+      <div class="stitch-composer-dock">
+        <div class="stitch-composer-frame">
+          <form id="chatForm" class="stitch-composer" novalidate>
             <label id="questionLabel" class="sr-only" for="questionInput">Question</label>
             <textarea
               id="questionInput"
@@ -72,24 +126,150 @@
               placeholder="What is Chroma used for?"
               required
             ></textarea>
-            <div class="composer-actions composer-actions-docked">
-              <p id="statusText" class="status-text" aria-live="polite">Ready.</p>
-              <button id="submitButton" type="submit">Send</button>
+            <div class="stitch-composer-footer">
+              <div class="stitch-composer-tools">
+                <button
+                  id="webSearchToggleButton"
+                  class="stitch-tool-button stitch-tool-toggle"
+                  type="button"
+                  aria-pressed="false"
+                >
+                  <span class="material-symbols-outlined">travel_explore</span>
+                  <span id="webSearchToggleLabel" class="tool-label">联网搜索</span>
+                  <span id="webSearchToggleState" class="tool-state">关</span>
+                </button>
+              </div>
+              <div class="stitch-composer-send">
+                <p id="statusText" class="status-text" aria-live="polite">Ready.</p>
+                <button id="submitButton" type="submit" class="button-primary">
+                  <span class="material-symbols-outlined">send</span>
+                  <span id="submitButtonLabel">Send</span>
+                </button>
+              </div>
             </div>
           </form>
         </div>
+      </div>
+
+      <aside class="stitch-floating-panel" aria-hidden="true">
+        <section class="stitch-panel-card">
+          <div class="stitch-panel-head">
+            <h3>上下文记忆</h3>
+            <span class="material-symbols-outlined">info</span>
+          </div>
+          <div class="stitch-panel-stack">
+            <div class="stitch-panel-metric">
+              <span>会话模式</span>
+              <strong>本地知识问答</strong>
+            </div>
+            <div class="stitch-panel-metric">
+              <span>当前能力</span>
+              <strong>多轮检索与总结</strong>
+            </div>
+            <div class="stitch-panel-metric">
+              <span>主工作区</span>
+              <strong>对话线程</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="stitch-panel-card stitch-panel-card-accent">
+          <h3>模型状态</h3>
+          <div class="stitch-panel-status">
+            <span class="stitch-panel-dot"></span>
+            <strong>askRAG Runtime</strong>
+          </div>
+          <p>当前主界面已切换为 Stitch 骨架。</p>
+        </section>
+      </aside>
+
+      <div hidden aria-hidden="true">
+        <p id="eyebrowText">Chat</p>
+        <h1 id="pageTitle">askRAG Chat</h1>
+        <p id="heroText">Current conversation workspace</p>
+        <p id="stageEyebrow">Conversation</p>
+        <h2 id="stageTitle">Focused responses, primary sources, and stream updates in one place.</h2>
+        <p id="stageLead">The left rail keeps sessions close, while the main canvas keeps the answer readable and the source trail visible.</p>
+        <h2 id="promptTitle">Prompt</h2>
+        <p id="promptText">Ask one question at a time.</p>
+        <p id="notesEyebrow">Notes</p>
+        <h2 id="notesTitle">Tips</h2>
+        <span id="noteOne">You can ask follow-up questions about the previous turn.</span>
+        <span id="noteTwo">Use the library page when you need to add new files.</span>
+        <span id="noteThree">The primary source appears below each answer.</span>
+        <p id="routingEyebrow">Routing</p>
+        <h2 id="routingTitle">Primary source</h2>
+        <p id="routingText">Ask one question at a time and keep the topic focused so the evidence trail stays clear.</p>
+        <span id="livePill">Live</span>
+        <span id="streamingPill">Streaming</span>
+        <h2 id="stateTitle">Response state</h2>
+        <p id="stateText">Replies stream into the middle column while source chips stay attached to the answer bubble.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="workspaceOverlay" class="workspace-overlay" hidden aria-hidden="true">
+    <div class="workspace-modal" role="dialog" aria-modal="true" aria-labelledby="workspaceModalTitle">
+      <button id="workspaceModalClose" class="workspace-modal-close icon-button" type="button" aria-label="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+
+      <section id="settingsPanel" class="workspace-modal-panel">
+        <p id="settingsEyebrow" class="eyebrow">Settings</p>
+        <h2 id="workspaceModalTitle">Workspace settings</h2>
+        <p id="settingsCopy" class="workspace-modal-copy">Adjust the interface language and inspect the active runtime model.</p>
+
+        <div class="workspace-modal-grid">
+          <div class="workspace-modal-block">
+            <p id="settingsLanguageLabel" class="workspace-modal-label">Language</p>
+            <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
+              <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+              <button id="localeEn" class="locale-button" type="button">EN</button>
+            </div>
+          </div>
+
+          <div class="workspace-modal-block workspace-modal-model">
+            <p id="settingsModelLabel" class="workspace-modal-label">Current model</p>
+            <strong id="currentModelValue" class="workspace-modal-model-value">Loading...</strong>
+            <span id="currentModelHint" class="workspace-modal-hint">Reading the current chat model from the local runtime.</span>
+          </div>
+        </div>
       </section>
-    </main>
+
+      <section id="supportPanel" class="workspace-modal-panel" hidden>
+        <p id="supportEyebrow" class="eyebrow">Support</p>
+        <h2 id="supportTitle">Workspace support</h2>
+        <p id="supportCopy" class="workspace-modal-copy">Reference information for the local workspace and the stack behind it.</p>
+
+        <div class="workspace-modal-grid workspace-modal-grid-two">
+          <div class="workspace-modal-block">
+            <p id="supportAuthorLabel" class="workspace-modal-label">Author</p>
+            <strong id="supportAuthorValue" class="workspace-modal-model-value">askRAG / Codex</strong>
+            <span id="supportAuthorHint" class="workspace-modal-hint">Maintained as a local knowledge workspace.</span>
+          </div>
+
+          <div class="workspace-modal-block">
+            <p id="supportStackLabel" class="workspace-modal-label">Tech stack</p>
+            <strong id="supportStackValue" class="workspace-modal-model-value">FastAPI, Python, Chroma, OpenAI, HTML/CSS/JS</strong>
+            <span id="supportStackHint" class="workspace-modal-hint">Backend services, retrieval, memory, and the browser shell.</span>
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
 
   <template id="messageTemplate">
     <article class="message" data-role-key="assistant">
       <div class="message-role"></div>
+      <div class="message-thinking" aria-hidden="true">
+        <span class="message-thinking-dot"></span>
+      </div>
       <div class="message-body"></div>
       <div class="message-sources"></div>
     </article>
   </template>
 
   <script src="/assets/app.js"></script>
+  <script src="/assets/workspace-panels.js"></script>
 </body>
 </html>

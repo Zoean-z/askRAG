@@ -1,4 +1,4 @@
-﻿import re
+import re
 from dataclasses import dataclass
 
 from langchain_core.documents import Document
@@ -11,7 +11,7 @@ from app.rag import (
     score_document_match,
     score_document_match_in_history,
 )
-from app.retrievers.chunk_retriever import (
+from app.retrievers.backend import (
     get_corpus_documents,
     get_corpus_documents_by_source,
     run_hybrid_chunk_search,
@@ -41,8 +41,8 @@ def build_summary_search_query(question: str) -> str:
     for term in SUMMARY_INTENT_TERMS + SUMMARY_FOLLOW_UP_TERMS:
         query = re.sub(re.escape(term), " ", query, flags=re.IGNORECASE)
 
-    query = re.sub(r"这个文件|这篇文章|这份文档|这个文档|这篇文档", " ", query)
-    query = re.sub(r"[\s,，。；;:：!！?？、]+", " ", query)
+    query = re.sub(r"\u8fd9\u4e2a\u6587\u4ef6|\u8fd9\u7bc7\u6587\u7ae0|\u8fd9\u4efd\u6587\u6863|\u8fd9\u4e2a\u6587\u6863|\u8fd9\u7bc7\u6587\u6863", " ", query)
+    query = re.sub(r"[\\s,\uFF0C\u3002\uFF1B;:\uFF1A!\uFF01?\uFF1F\u3001]+", " ", query)
     query = query.strip()
     return query or question.strip()
 
@@ -113,7 +113,7 @@ def rank_parent_documents_from_child_results(
 
 def retrieve_parent_documents(question: str, history: list[dict[str, str]] | None = None, limit: int = 3) -> list[ParentDocumentCandidate]:
     search_query = build_summary_search_query(question)
-    _, _, _, child_results = run_hybrid_chunk_search(
+    _, _, _, _, child_results = run_hybrid_chunk_search(
         search_query,
         vector_k=max(4, limit * 2),
         keyword_limit=max(6, limit * 3),

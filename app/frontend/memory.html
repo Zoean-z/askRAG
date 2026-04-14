@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>askRAG Console</title>
+  <title>askRAG Memory</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/styles.css">
 </head>
-<body data-page="library">
-  <div class="app-shell app-shell-library">
+<body data-page="memory">
+  <div class="app-shell app-shell-memory">
     <aside class="sidebar sidebar-library-stitch">
       <div class="sidebar-brand">
         <div class="brand-mark" aria-hidden="true">
-          <span class="material-symbols-outlined">auto_stories</span>
+          <span class="material-symbols-outlined">memory</span>
         </div>
         <div class="brand-copy">
           <div class="brandmark-name">askRAG</div>
@@ -28,11 +28,11 @@
           <span class="material-symbols-outlined nav-link-icon">chat_bubble</span>
           <span id="navChatLabel" class="nav-link-label">Chat</span>
         </a>
-        <a id="navLibrary" class="nav-link is-active" href="/library">
+        <a id="navLibrary" class="nav-link" href="/library">
           <span class="material-symbols-outlined nav-link-icon">menu_book</span>
           <span id="navLibraryLabel" class="nav-link-label">Library</span>
         </a>
-        <a id="navMemory" class="nav-link" href="/memory">
+        <a id="navMemory" class="nav-link is-active" href="/memory">
           <span class="material-symbols-outlined nav-link-icon">memory</span>
           <span id="navMemoryLabel" class="nav-link-label">Memory</span>
         </a>
@@ -40,8 +40,8 @@
 
       <section class="sidebar-section sidebar-section-session sidebar-library-summary">
         <div class="sidebar-section-header sidebar-section-header-compact">
-          <h2 id="librarySidebarTitle">Added files</h2>
-          <p id="librarySidebarEyebrow" class="eyebrow">Archive</p>
+          <h2 id="memorySidebarTitle">已保存记忆</h2>
+          <p id="memorySidebarEyebrow" class="eyebrow">档案</p>
         </div>
         <div class="sidebar-library-spacer" aria-hidden="true"></div>
       </section>
@@ -50,106 +50,106 @@
         <div class="sidebar-links">
           <button id="settingsButton" class="sidebar-link" type="button">
             <span class="material-symbols-outlined">settings</span>
-            <span id="sidebarSettingsLabel">Settings</span>
+            <span id="sidebarSettingsLabel">设置</span>
           </button>
           <button id="supportButton" class="sidebar-link" type="button">
             <span class="material-symbols-outlined">help_outline</span>
-            <span id="sidebarSupportLabel">Support</span>
+            <span id="sidebarSupportLabel">帮助</span>
           </button>
         </div>
 
         <div class="sidebar-user">
           <div class="sidebar-avatar" aria-hidden="true">A</div>
           <div>
-            <div id="sidebarUserName" class="sidebar-user-name">askRAG Console</div>
-            <div id="sidebarUserMeta" class="sidebar-user-meta">Pro Member</div>
+            <div id="sidebarUserName" class="sidebar-user-name">askRAG 控制台</div>
+            <div id="sidebarUserMeta" class="sidebar-user-meta">本地知识工作区</div>
           </div>
         </div>
       </footer>
     </aside>
 
-    <main class="workspace workspace-library workspace-library-showcase">
+    <main class="workspace workspace-memory workspace-library-showcase">
       <header class="library-showcase-topbar">
         <div class="library-showcase-breadcrumb">
-          <span>Workspace</span>
+          <span>工作区</span>
           <span>/</span>
-          <span id="eyebrowText">Knowledge Base</span>
+          <span id="eyebrowText">记忆</span>
         </div>
 
         <div class="utility-actions">
-          <label id="librarySearchLabel" class="utility-search library-showcase-search" aria-label="Search knowledge base">
+          <label id="memorySearchLabel" class="utility-search library-showcase-search" aria-label="搜索记忆">
             <span class="material-symbols-outlined">search</span>
-            <input id="librarySearchInput" type="text" placeholder="Search knowledge base..." />
+            <input id="memorySearchInput" type="text" placeholder="搜索记忆..." />
           </label>
-          <button id="libraryNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
+          <button id="memoryNotificationsButton" class="icon-button" type="button" aria-label="通知">
             <span class="material-symbols-outlined">notifications</span>
           </button>
-          <button id="libraryHistoryButton" class="icon-button" type="button" aria-label="History">
+          <button id="memoryHistoryButton" class="icon-button" type="button" aria-label="历史">
             <span class="material-symbols-outlined">history</span>
           </button>
         </div>
       </header>
 
-      <section class="library-showcase-intro">
+      <section class="library-showcase-intro memory-showcase-intro">
         <div class="chip-row library-showcase-pills">
-          <span id="libraryStatusPill" class="status-pill">Memory active</span>
-          <span id="libraryScopePill" class="status-pill status-pill-soft">KB: documents</span>
+          <span id="memoryStatusPill" class="status-pill">记忆已启用</span>
+          <span id="memoryScopePill" class="status-pill status-pill-soft">长期记忆</span>
         </div>
-        <h1>Knowledge Base</h1>
-        <p id="heroText" class="hero-text">Add files here to expand what chat can answer.</p>
+        <h1 id="pageTitle">长期记忆</h1>
+        <p id="summaryValue" class="hero-text">正在读取长期记忆...</p>
       </section>
 
-      <section class="library-dropzone-panel surface-panel">
-        <form id="uploadForm" class="library-dropzone-form" novalidate>
-          <div class="library-dropzone-icon" aria-hidden="true">
-            <span class="material-symbols-outlined">upload_file</span>
-          </div>
-          <h2 id="uploadTitle">Upload document</h2>
-          <p id="uploadText" class="library-dropzone-copy">Upload <span class="mono">.txt</span> or <span class="mono">.md</span> files.</p>
-          <label id="filePickerLabel" class="file-picker library-dropzone-button" for="fileInput">
-            <span id="filePickerText">Choose a text file</span>
-            <input id="fileInput" type="file" accept=".txt,.md">
-          </label>
-          <div class="library-dropzone-footer">
-            <p id="uploadStatus" class="status-text" aria-live="polite">No file selected.</p>
-            <button id="uploadButton" type="submit" class="button-primary library-upload-submit"><span id="uploadButtonLabel">Upload</span></button>
-          </div>
-        </form>
-      </section>
-
-      <section class="library-assets-shell">
-        <div class="library-assets-header">
+      <section class="library-assets-shell memory-assets-shell">
+        <div class="library-assets-header memory-list-header">
           <div>
-            <p id="archiveEyebrow" class="eyebrow">Archive</p>
-            <h2 id="libraryTitle">Added files</h2>
-          </div>
-          <div class="library-assets-tools" aria-hidden="true">
-            <button class="icon-button library-assets-tool" type="button" tabindex="-1">
-              <span class="material-symbols-outlined">filter_alt</span>
-            </button>
-            <button class="icon-button library-assets-tool" type="button" tabindex="-1">
-              <span class="material-symbols-outlined">grid_view</span>
-            </button>
+            <p id="listEyebrow" class="eyebrow">档案</p>
+            <h2 id="listTitle">已保存的长期记忆</h2>
           </div>
         </div>
 
-        <div id="documentList" class="document-list document-list-table" aria-live="polite"></div>
+        <p id="memoryStatus" class="status-text memory-status" aria-live="polite">正在读取长期记忆...</p>
+        <div id="memoryList" class="memory-list" aria-live="polite"></div>
       </section>
+
+      <footer class="workspace-footer">
+        <div class="workspace-footer-actions">
+          <button id="memoryExportButton" class="button-secondary" type="button">导出数据</button>
+          <button id="memoryPurgeButton" class="button-danger" type="button">清空全部记忆</button>
+        </div>
+      </footer>
 
       <div hidden aria-hidden="true">
-        <p id="librarySidebarCopy">This panel shows the files currently available to chat.</p>
-        <span id="librarySidebarAction">Library workflow</span>
-        <p id="heroMetaLabel">Workflow</p>
-        <p id="heroMetaText">Bring in source files, keep the archive tidy, and make the document workspace ready for citation-backed chat.</p>
-        <p id="intakeEyebrow">Intake</p>
-        <p id="libraryText">This panel shows the files currently available to chat.</p>
-        <p id="archiveSummaryLabel">Use</p>
-        <p id="archiveSummaryText">Every document listed here becomes part of the evidence library that Chat can cite after processing.</p>
-        <p id="notesEyebrow">Guidance</p>
-        <h2 id="notesTitle">Notes</h2>
-        <span id="noteOne">Uploaded files appear on the right.</span>
-        <span id="noteTwo">New content becomes available in chat after processing.</span>
-        <span id="noteThree">Duplicate files are skipped automatically.</span>
+        <p id="heroText">在独立页面里查看和删除会持续影响未来回答的长期记忆，不打断主对话工作区。</p>
+        <p id="summaryLabel">概览</p>
+        <p id="snapshotEyebrow">快照</p>
+        <h2 id="countsTitle">一览</h2>
+        <dt id="totalLabel">总数</dt>
+        <dd id="totalCount">0</dd>
+        <dt id="approvedLabel">偏好</dt>
+        <dd id="approvedCount">0</dd>
+        <dt id="pendingLabel">事实</dt>
+        <dd id="pendingCount">0</dd>
+        <dt id="auditLabel">当前显示</dt>
+        <dd id="auditCount">0</dd>
+        <p id="listText">查看仍会参与未来回答的长期偏好与稳定事实。</p>
+        <p id="memoryActionEyebrow">操作</p>
+        <h2 id="archiveMetaLabel">操作</h2>
+        <p id="archiveMetaText">如果某条记忆不该再影响后续回答，可以在这里删除。</p>
+        <p id="memoryLogicEyebrow">逻辑</p>
+        <h2 id="memoryLogicTitle">保留策略</h2>
+        <p id="memoryLogicText">长期记忆会持续保留，直到用户在记忆档案中明确移除。</p>
+        <p id="memoryArchiveEyebrow">档案</p>
+        <h2 id="memoryArchiveTitle">已保存的长期记忆</h2>
+        <p id="memoryArchiveMetaLabel">显示范围</p>
+        <p id="memoryArchiveMetaText">在这里删除条目后，它就不再继续影响后续回答。</p>
+        <span id="memoryPrivacyPill">隐私</span>
+        <span id="memoryRollbackPill">可回滚</span>
+        <h2 id="memoryCardTitle">记忆逻辑</h2>
+        <p id="memoryCardText">稳定偏好和事实可以单独移除，不会影响工作区的其他内容。</p>
+        <p id="memoryPreviewEyebrow">认知核心</p>
+        <h3 id="memoryPreviewTitle">渐进式智能</h3>
+        <p id="memoryPreviewText">长期记忆应当像安静的档案，而不是吵闹的仪表盘。</p>
+        <p id="memoryFooterCopy">当前记忆占用：0.4%</p>
       </div>
     </main>
   </div>
@@ -204,7 +204,7 @@
     </div>
   </div>
 
-  <script src="/assets/app.js"></script>
+  <script src="/assets/memory.js"></script>
   <script src="/assets/workspace-panels.js"></script>
 </body>
 </html>

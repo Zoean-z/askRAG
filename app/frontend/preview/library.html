@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>askRAG Preview Library</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="library" data-preview="true">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="material-symbols-outlined">auto_stories</span>
+        </div>
+        <div class="brand-copy">
+          <div class="brandmark-name">askRAG</div>
+          <div id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</div>
+        </div>
+      </div>
+
+      <nav id="primaryNav" class="sidebar-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link" href="./chat.html">Chat</a>
+        <a id="navLibrary" class="nav-link is-active" href="./library.html">Library</a>
+        <a id="navMemory" class="nav-link" href="./memory.html">Memory</a>
+      </nav>
+
+      <section class="sidebar-section">
+        <div class="sidebar-section-header">
+          <p id="librarySidebarEyebrow" class="eyebrow">Archive</p>
+          <h2 id="librarySidebarTitle">Added files</h2>
+        </div>
+        <p id="librarySidebarCopy" class="sidebar-copy">Preview the archive panel and document density with mock records.</p>
+        <button id="librarySidebarButton" class="button-primary sidebar-action" type="button">
+          <span class="material-symbols-outlined">upload_file</span>
+          <span id="librarySidebarAction">Library workflow</span>
+        </button>
+      </section>
+
+      <footer class="sidebar-footer">
+        <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
+          <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+          <button id="localeEn" class="locale-button" type="button">EN</button>
+        </div>
+
+        <div class="sidebar-links">
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span id="sidebarSettingsLabel">Settings</span>
+          </a>
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">help_outline</span>
+            <span id="sidebarSupportLabel">Support</span>
+          </a>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" aria-hidden="true">A</div>
+          <div>
+            <div id="sidebarUserName" class="sidebar-user-name">askRAG Console</div>
+            <div id="sidebarUserMeta" class="sidebar-user-meta">Local knowledge workspace</div>
+          </div>
+        </div>
+      </footer>
+    </aside>
+
+    <main class="workspace workspace-library">
+      <header class="utility-bar">
+        <div class="utility-copy">
+          <div class="chip-row">
+            <span id="libraryStatusPill" class="status-pill">Preview mode</span>
+            <span id="libraryScopePill" class="status-pill status-pill-soft">Document workspace</span>
+          </div>
+          <p id="eyebrowText" class="eyebrow">Library</p>
+          <h1 id="pageTitle">Knowledge Base</h1>
+          <p id="heroText" class="hero-text">Inspect the library layout with local mock documents, no backend required.</p>
+        </div>
+
+        <div class="utility-actions">
+          <label id="librarySearchLabel" class="utility-search" aria-label="Search knowledge base">
+            <span class="material-symbols-outlined">search</span>
+            <input id="librarySearchInput" type="text" placeholder="Search knowledge base..." />
+          </label>
+          <button id="libraryNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <button id="libraryHistoryButton" class="icon-button" type="button" aria-label="History">
+            <span class="material-symbols-outlined">history</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="page-hero page-hero-split surface-panel">
+        <div class="hero-copy hero-copy-compact">
+          <p id="intakeEyebrow" class="eyebrow">Intake</p>
+          <h2 id="uploadTitle">Upload document</h2>
+          <p id="uploadText" class="hero-text">Preview-only mode. Upload controls are visual here and do not call the backend.</p>
+        </div>
+        <div class="hero-meta hero-meta-panel">
+          <p id="heroMetaLabel" class="meta-label">Workflow</p>
+          <p id="heroMetaText" class="meta-value">Use this screen to validate archive density, search field placement, and panel hierarchy.</p>
+        </div>
+      </section>
+
+      <section class="library-layout">
+        <section class="control-panel library-panel surface-panel">
+          <form id="uploadForm" class="upload-form upload-form-editorial" novalidate>
+            <label id="filePickerLabel" class="file-picker" for="fileInput">
+              <span id="filePickerText">Choose a text file</span>
+              <input id="fileInput" type="file" accept=".txt,.md">
+            </label>
+            <div class="composer-actions upload-actions">
+              <p id="uploadStatus" class="status-text" aria-live="polite">Preview mode. Files are not uploaded.</p>
+              <button id="uploadButton" type="submit" class="button-primary"><span id="uploadButtonLabel">Upload</span></button>
+            </div>
+          </form>
+
+          <section class="control-block control-block-muted library-guidance">
+            <p id="notesEyebrow" class="eyebrow">Guidance</p>
+            <h2 id="notesTitle">Preview guidance</h2>
+            <ul class="notes-list notes-list-editorial">
+              <li id="noteOne">Search filters the mock archive on the client side.</li>
+              <li id="noteTwo">Delete only affects local preview data.</li>
+              <li id="noteThree">Use this page to validate Chinese text and spacing.</li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="library-inspector surface-panel">
+          <div class="inspector-header library-archive-header">
+            <div class="library-archive-copy">
+              <p id="archiveEyebrow" class="eyebrow">Archive</p>
+              <h2 id="libraryTitle">Added files</h2>
+              <p id="libraryText">This panel shows the mock files currently available to chat.</p>
+            </div>
+            <div class="library-archive-meta">
+              <p id="archiveSummaryLabel" class="meta-label">Use</p>
+              <p id="archiveSummaryText" class="meta-value">Every record here is local preview data so you can inspect cards, actions, and metadata density.</p>
+            </div>
+          </div>
+          <div id="documentList" class="document-list document-list-panel" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section class="metrics-grid">
+        <article class="metric-card surface-panel">
+          <p id="metricEyebrowOne" class="eyebrow">Evidence</p>
+          <div id="metricValueOne" class="metric-value">Primary</div>
+          <p id="metricCopyOne" class="metric-copy">Document cards keep metadata tight while staying readable in Chinese.</p>
+        </article>
+        <article class="metric-card surface-panel">
+          <p id="metricEyebrowTwo" class="eyebrow">Processing</p>
+          <div id="metricValueTwo" class="metric-value">Steady</div>
+          <p id="metricCopyTwo" class="metric-copy">The archive and intake panels stay visually separate without pushing the page into dashboard clutter.</p>
+        </article>
+        <article class="metric-card metric-card-accent surface-panel">
+          <p id="metricEyebrowThree" class="eyebrow">Action</p>
+          <div id="metricValueThree" class="metric-value">Ready</div>
+          <p id="metricCopyThree" class="metric-copy">You can validate layout, scroll, and localization before the backend is running.</p>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <script src="./preview.js"></script>
+</body>
+</html>

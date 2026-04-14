@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>askRAG Preview Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body data-page="chat" data-preview="true">
+  <div class="app-shell app-shell-chat">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span class="material-symbols-outlined">chat_bubble</span>
+        </div>
+        <div class="brand-copy">
+          <div class="brandmark-name">askRAG</div>
+          <div id="brandSubline" class="brandmark-subline">Local Knowledge Workbench</div>
+        </div>
+      </div>
+
+      <nav id="primaryNav" class="sidebar-nav" aria-label="Primary navigation">
+        <a id="navChat" class="nav-link is-active" href="./chat.html">Chat</a>
+        <a id="navLibrary" class="nav-link" href="./library.html">Library</a>
+        <a id="navMemory" class="nav-link" href="./memory.html">Memory</a>
+      </nav>
+
+      <section class="sidebar-section sidebar-section-session">
+        <div class="sidebar-section-header">
+          <p id="conversationsEyebrow" class="eyebrow">Threads</p>
+          <h2 id="conversationsTitle">Recent sessions</h2>
+        </div>
+        <button id="newConversationButton" class="button-primary sidebar-action" type="button">
+          <span class="material-symbols-outlined">add</span>
+          <span id="newConversationButtonLabel">New chat</span>
+        </button>
+        <p id="conversationRailStatus" class="status-text sidebar-status" aria-live="polite">Loaded preview conversations.</p>
+        <div id="conversationList" class="conversation-list" aria-live="polite"></div>
+      </section>
+
+      <footer class="sidebar-footer">
+        <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
+          <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+          <button id="localeEn" class="locale-button" type="button">EN</button>
+        </div>
+
+        <div class="sidebar-links">
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">settings</span>
+            <span id="sidebarSettingsLabel">Settings</span>
+          </a>
+          <a class="sidebar-link" href="#">
+            <span class="material-symbols-outlined">help_outline</span>
+            <span id="sidebarSupportLabel">Support</span>
+          </a>
+        </div>
+
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" aria-hidden="true">A</div>
+          <div>
+            <div id="sidebarUserName" class="sidebar-user-name">askRAG Console</div>
+            <div id="sidebarUserMeta" class="sidebar-user-meta">Local knowledge workspace</div>
+          </div>
+        </div>
+      </footer>
+    </aside>
+
+    <main class="workspace workspace-chat">
+      <header class="utility-bar">
+        <div class="utility-copy">
+          <div class="chip-row">
+            <span id="chatStatusPill" class="status-pill">Preview mode</span>
+            <span id="chatScopePill" class="status-pill status-pill-soft">Chat workspace</span>
+          </div>
+          <p id="eyebrowText" class="eyebrow">Chat</p>
+          <h1 id="pageTitle">askRAG Chat</h1>
+          <p id="heroText" class="hero-text">Preview the current front-end shell without starting the backend service.</p>
+        </div>
+
+        <div class="utility-actions">
+          <button id="chatNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
+            <span class="material-symbols-outlined">notifications</span>
+          </button>
+          <button id="chatHistoryButton" class="icon-button" type="button" aria-label="History">
+            <span class="material-symbols-outlined">history</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="chat-grid">
+        <div class="chat-main-column">
+          <section class="chat-stage-header surface-panel">
+            <div class="chat-stage-copy">
+              <p id="stageEyebrow" class="eyebrow">Conversation</p>
+              <h2 id="stageTitle">Keep the answer, source trail, and stream status in one focused workspace.</h2>
+              <p id="stageLead" class="chat-stage-lead">The left rail stays stable while the center panel owns the scroll and composer.</p>
+            </div>
+          </section>
+
+          <section id="transcriptPanel" class="transcript-panel transcript-panel-chat surface-panel" aria-label="Conversation transcript">
+            <div id="messageList" class="message-list message-list-chat"></div>
+          </section>
+
+          <div class="chat-composer-shell surface-panel">
+            <section class="chat-composer-meta">
+              <div class="control-block chat-prompt-copy">
+                <h2 id="promptTitle">Composer</h2>
+                <p id="promptText">This is a front-end preview. You can still type to simulate a local reply.</p>
+              </div>
+            </section>
+
+            <form id="chatForm" class="composer composer-docked" novalidate>
+              <label id="questionLabel" class="sr-only" for="questionInput">Question</label>
+              <textarea
+                id="questionInput"
+                name="question"
+                rows="3"
+                maxlength="2000"
+                placeholder="Search Aphelios lore and summarize it"
+                required
+              ></textarea>
+              <div class="composer-actions composer-actions-docked">
+                <p id="statusText" class="status-text" aria-live="polite">Preview mode. No backend requests will be sent.</p>
+                <button id="submitButton" type="submit" class="button-primary">
+                  <span class="material-symbols-outlined">send</span>
+                  <span id="submitButtonLabel">Send</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <aside class="inspector-stack">
+          <section class="info-card surface-panel">
+            <p id="notesEyebrow" class="eyebrow">Notes</p>
+            <h2 id="notesTitle">Preview guidance</h2>
+            <ul class="notes-list notes-list-inline">
+              <li id="noteOne">Only the transcript region scrolls in this layout.</li>
+              <li id="noteTwo">Sidebar density matches the compact conversation design.</li>
+              <li id="noteThree">Language switching works without any backend dependency.</li>
+            </ul>
+          </section>
+
+          <section class="info-card info-card-soft surface-panel">
+            <p id="routingEyebrow" class="eyebrow">Source trail</p>
+            <h2 id="routingTitle">Primary source</h2>
+            <p id="routingText">Mock source chips stay attached to assistant responses so you can inspect layout density.</p>
+          </section>
+
+          <section class="info-card info-card-accent surface-panel">
+            <div class="info-card-topline">
+              <span id="livePill" class="status-pill">Static preview</span>
+              <span id="streamingPill" class="status-pill status-pill-soft">Local mock</span>
+            </div>
+            <h2 id="stateTitle">Response state</h2>
+            <p id="stateText">Use this page to validate shell, spacing, scroll behavior, and Chinese copy before booting the app.</p>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="./preview.js"></script>
+</body>
+</html>

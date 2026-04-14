@@ -1,5 +1,6 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
+langgraph
 langchain
 langchain-openai
 langchain-chroma
