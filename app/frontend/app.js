@@ -1225,12 +1225,10 @@ function setMessageThinking(article, isThinking) {
 function buildMessageArticle(roleKey) {
   const fragment = pageConfig.chat.template.content.cloneNode(true);
   const article = fragment.querySelector(".message");
-  const roleEl = fragment.querySelector(".message-role");
 
   article.dataset.roleKey = roleKey;
   article.dataset.rawText = "";
   article.classList.add(roleKey === "user" ? "message-user" : "message-assistant");
-  roleEl.textContent = t().roles[roleKey] || roleKey;
   return article;
 }
 

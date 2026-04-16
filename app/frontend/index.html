@@ -103,7 +103,6 @@
             <section id="transcriptPanel" class="stitch-transcript" aria-label="Conversation transcript">
               <div id="messageList" class="message-list message-list-chat">
                 <article class="message message-assistant message-intro" data-role-key="assistant">
-                  <div class="message-role">assistant</div>
                   <div id="introMessage" class="message-body">
                     <p>Enter a question to start.</p>
                   </div>
@@ -151,60 +150,6 @@
         </div>
       </div>
 
-      <aside class="stitch-floating-panel" aria-hidden="true">
-        <section class="stitch-panel-card">
-          <div class="stitch-panel-head">
-            <h3>上下文记忆</h3>
-            <span class="material-symbols-outlined">info</span>
-          </div>
-          <div class="stitch-panel-stack">
-            <div class="stitch-panel-metric">
-              <span>会话模式</span>
-              <strong>本地知识问答</strong>
-            </div>
-            <div class="stitch-panel-metric">
-              <span>当前能力</span>
-              <strong>多轮检索与总结</strong>
-            </div>
-            <div class="stitch-panel-metric">
-              <span>主工作区</span>
-              <strong>对话线程</strong>
-            </div>
-          </div>
-        </section>
-
-        <section class="stitch-panel-card stitch-panel-card-accent">
-          <h3>模型状态</h3>
-          <div class="stitch-panel-status">
-            <span class="stitch-panel-dot"></span>
-            <strong>askRAG Runtime</strong>
-          </div>
-          <p>当前主界面已切换为 Stitch 骨架。</p>
-        </section>
-      </aside>
-
-      <div hidden aria-hidden="true">
-        <p id="eyebrowText">Chat</p>
-        <h1 id="pageTitle">askRAG Chat</h1>
-        <p id="heroText">Current conversation workspace</p>
-        <p id="stageEyebrow">Conversation</p>
-        <h2 id="stageTitle">Focused responses, primary sources, and stream updates in one place.</h2>
-        <p id="stageLead">The left rail keeps sessions close, while the main canvas keeps the answer readable and the source trail visible.</p>
-        <h2 id="promptTitle">Prompt</h2>
-        <p id="promptText">Ask one question at a time.</p>
-        <p id="notesEyebrow">Notes</p>
-        <h2 id="notesTitle">Tips</h2>
-        <span id="noteOne">You can ask follow-up questions about the previous turn.</span>
-        <span id="noteTwo">Use the library page when you need to add new files.</span>
-        <span id="noteThree">The primary source appears below each answer.</span>
-        <p id="routingEyebrow">Routing</p>
-        <h2 id="routingTitle">Primary source</h2>
-        <p id="routingText">Ask one question at a time and keep the topic focused so the evidence trail stays clear.</p>
-        <span id="livePill">Live</span>
-        <span id="streamingPill">Streaming</span>
-        <h2 id="stateTitle">Response state</h2>
-        <p id="stateText">Replies stream into the middle column while source chips stay attached to the answer bubble.</p>
-      </div>
     </div>
   </div>
 
@@ -260,7 +205,6 @@
 
   <template id="messageTemplate">
     <article class="message" data-role-key="assistant">
-      <div class="message-role"></div>
       <div class="message-thinking" aria-hidden="true">
         <span class="message-thinking-dot"></span>
       </div>

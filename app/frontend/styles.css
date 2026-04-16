@@ -29,7 +29,7 @@
   --sidebar-width: 286px;
   --chat-sidebar-width: 256px;
   --chat-header-height: 76px;
-  --chat-content-width: 1040px;
+  --chat-content-width: 820px;
 }
 
 *,
@@ -928,11 +928,11 @@ body[data-page="chat"] .stitch-scroll-area {
   height: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 16px 32px 180px;
+  padding: 12px 28px 124px;
 }
 
 body[data-page="chat"] .stitch-scroll-inner {
-  max-width: 896px;
+  max-width: 780px;
   margin: 0 auto;
   min-height: 100%;
 }
@@ -944,9 +944,9 @@ body[data-page="chat"] .stitch-transcript {
 body[data-page="chat"] .message-list-chat {
   display: flex;
   flex-direction: column;
-  gap: 44px;
+  gap: 28px;
   min-height: 100%;
-  padding: 40px 0;
+  padding: 28px 0 0;
   overflow: visible;
 }
 
@@ -963,17 +963,14 @@ body[data-page="chat"] .message-user {
 }
 
 body[data-page="chat"] .message-user .message-body {
-  width: min(80%, 760px);
+  width: min(72%, 620px);
   margin-left: auto;
-  padding: 20px;
-  border-radius: 16px;
+  padding: 12px 18px 13px;
+  border-radius: 18px;
   background: rgba(53, 53, 52, 0.92);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-}
-
-body[data-page="chat"] .message-user .message-role {
-  margin: 0 8px 10px 0;
-  text-align: right;
+  font-size: 0.96rem;
+  line-height: 1.68;
 }
 
 body[data-page="chat"] .message-assistant {
@@ -981,23 +978,19 @@ body[data-page="chat"] .message-assistant {
   align-self: stretch;
 }
 
-body[data-page="chat"] .message-assistant .message-role {
-  margin: 0 0 12px 24px;
-}
-
 body[data-page="chat"] .message-assistant .message-body,
 body[data-page="chat"] .message-assistant .message-tool-status,
 body[data-page="chat"] .message-assistant .message-sources {
-  max-width: min(90%, 820px);
-  margin-left: 24px;
+  max-width: min(86%, 720px);
+  margin-left: 18px;
 }
 
 body[data-page="chat"] .message-assistant .message-body {
   padding-left: 0;
-  border-left: 1px solid rgba(192, 193, 255, 0.2);
-  padding: 0 0 0 24px;
-  font-size: 1.08rem;
-  line-height: 1.9;
+  border-left: 1px solid rgba(192, 193, 255, 0.18);
+  padding: 0 0 0 18px;
+  font-size: 0.98rem;
+  line-height: 1.72;
 }
 
 body[data-page="chat"] .message-assistant.is-thinking .message-body {
@@ -1009,6 +1002,7 @@ body[data-page="chat"] .message-intro .message-body {
   border-left: 0;
   padding-left: 0;
   margin-left: 0;
+  max-width: min(72%, 620px);
 }
 
 body[data-page="chat"] .message-tool-status {
@@ -1025,12 +1019,12 @@ body[data-page="chat"] .stitch-composer-dock {
   right: 0;
   bottom: 0;
   z-index: 45;
-  padding: 0 32px 32px;
+  padding: 0 28px 24px;
   pointer-events: none;
 }
 
 body[data-page="chat"] .stitch-composer-frame {
-  max-width: 896px;
+  max-width: 780px;
   margin: 0 auto;
   padding: 8px;
   border-radius: 20px;
@@ -1047,9 +1041,9 @@ body[data-page="chat"] .stitch-composer {
 }
 
 body[data-page="chat"] .stitch-composer textarea {
-  min-height: 64px;
-  height: 64px;
-  padding: 20px;
+  min-height: 56px;
+  height: 56px;
+  padding: 16px 18px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1074,7 +1068,7 @@ body[data-page="chat"] .stitch-composer-footer {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1086,8 +1080,8 @@ body[data-page="chat"] .stitch-composer-tools {
 }
 
 body[data-page="chat"] .stitch-tool-button {
-  min-width: 120px;
-  height: 40px;
+  min-width: 108px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
@@ -1108,7 +1102,7 @@ body[data-page="chat"] .stitch-tool-button .material-symbols-outlined {
 }
 
 body[data-page="chat"] .stitch-tool-button .tool-label {
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1153,100 +1147,14 @@ body[data-page="chat"] .stitch-tool-button.is-active .tool-state {
 body[data-page="chat"] .stitch-composer-send {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 body[data-page="chat"] .stitch-composer-send .status-text {
   color: rgba(199, 196, 216, 0.48);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-}
-
-body[data-page="chat"] .stitch-floating-panel {
-  position: fixed;
-  top: 112px;
-  right: 32px;
-  width: 256px;
-  display: grid;
-  gap: 20px;
-  z-index: 34;
-}
-
-body[data-page="chat"] .stitch-panel-card {
-  padding: 20px;
-  border-radius: 16px;
-  background: rgba(28, 27, 27, 0.96);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-body[data-page="chat"] .stitch-panel-card-accent {
-  background:
-    radial-gradient(circle at top right, rgba(192, 193, 255, 0.18), transparent 36%),
-    rgba(75, 77, 216, 0.12);
-  box-shadow: inset 0 0 0 1px rgba(192, 193, 255, 0.18);
-}
-
-body[data-page="chat"] .stitch-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-body[data-page="chat"] .stitch-panel-head h3,
-body[data-page="chat"] .stitch-panel-card h3 {
-  margin: 0;
-  font-size: 0.72rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--primary);
-}
-
-body[data-page="chat"] .stitch-panel-head .material-symbols-outlined {
-  font-size: 16px;
-  color: rgba(199, 196, 216, 0.58);
-}
-
-body[data-page="chat"] .stitch-panel-stack {
-  display: grid;
-  gap: 12px;
-}
-
-body[data-page="chat"] .stitch-panel-metric {
-  display: grid;
-  gap: 4px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(53, 53, 52, 0.45);
-}
-
-body[data-page="chat"] .stitch-panel-metric span,
-body[data-page="chat"] .stitch-panel-card p {
-  color: rgba(199, 196, 216, 0.58);
-  font-size: 0.75rem;
-  line-height: 1.6;
-}
-
-body[data-page="chat"] .stitch-panel-metric strong,
-body[data-page="chat"] .stitch-panel-status strong {
-  font-size: 0.82rem;
-}
-
-body[data-page="chat"] .stitch-panel-status {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 12px 0 8px;
-}
-
-body[data-page="chat"] .stitch-panel-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--primary);
-  box-shadow: 0 0 10px rgba(192, 193, 255, 0.8);
 }
 
 body[data-page="library"] .app-shell-library {
@@ -2615,12 +2523,11 @@ body[data-page="memory"] .memory-badge {
 }
 
 .message-intro {
-  width: min(78%, 820px);
+  width: min(72%, 620px);
 }
 
 .message-role {
-  color: rgba(199, 196, 216, 0.54);
-  font-size: 0.68rem;
+  display: none;
 }
 
 .message-thinking {

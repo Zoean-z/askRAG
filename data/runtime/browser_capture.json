@@ -1,0 +1,77 @@
+{
+  "default": [
+    {
+      "kind": "request",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/ask/stream",
+      "headers": {
+        "referer": "http://127.0.0.1:8001/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0",
+        "accept": "text/event-stream",
+        "content-type": "application/json"
+      },
+      "post_data": {
+        "question": "????efls.txt",
+        "history": [
+          {
+            "role": "user",
+            "content": "????efls.txt",
+            "sources": []
+          },
+          {
+            "role": "assistant",
+            "content": "Based on the provided document, here is the summary:\n\nThe document explains that the",
+            "sources": [
+              "data/docs/efls.txt"
+            ]
+          }
+        ],
+        "conversation_id": "32fee35e-9348-4ee0-8317-22bcde02d2cb",
+        "use_web_search": false
+      }
+    },
+    {
+      "kind": "response",
+      "status": 200,
+      "url": "http://127.0.0.1:8001/ask/stream",
+      "headers": {
+        "transfer-encoding": "chunked",
+        "cache-control": "no-cache",
+        "content-type": "text/event-stream; charset=utf-8",
+        "connection": "keep-alive"
+      },
+      "text": "<ERR Response.text: Target page, context or browser has been closed>"
+    }
+  ],
+  "newchat": [
+    {
+      "kind": "request",
+      "method": "POST",
+      "url": "http://127.0.0.1:8001/ask/stream",
+      "headers": {
+        "referer": "http://127.0.0.1:8001/",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/147.0.0.0 Safari/537.36 Edg/147.0.0.0",
+        "accept": "text/event-stream",
+        "content-type": "application/json"
+      },
+      "post_data": {
+        "question": "????efls.txt",
+        "history": [],
+        "conversation_id": "e7f9fedc-60a2-4e07-8465-6ce1fead9233",
+        "use_web_search": false
+      }
+    },
+    {
+      "kind": "response",
+      "status": 200,
+      "url": "http://127.0.0.1:8001/ask/stream",
+      "headers": {
+        "transfer-encoding": "chunked",
+        "cache-control": "no-cache",
+        "content-type": "text/event-stream; charset=utf-8",
+        "connection": "keep-alive"
+      },
+      "text": "<ERR Response.text: Target page, context or browser has been closed>"
+    }
+  ]
+}

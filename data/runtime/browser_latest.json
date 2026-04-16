@@ -1,0 +1,15 @@
+[
+  {
+    "method": "POST",
+    "url": "http://127.0.0.1:8001/ask/stream",
+    "body": {
+      "question": "????efls.txt",
+      "history": [],
+      "conversation_id": "c09b1f39-9cd2-4afd-8c3a-e01371e8cd6e",
+      "use_web_search": false
+    }
+  },
+  {
+    "activeConversationText": "新对话\n04/16 13:28\ndelete\n????efls.txt\n1 条消息 · 04/16 13:28\ndelete\n????efls.txt\n1 条消息 · 04/16 13:27\ndelete\n总结一下efls.txt\n2 条消息 · 04/16 13:23\ndelete"
+  }
+]

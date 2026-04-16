@@ -1,0 +1,817 @@
+{
+  "schema_version": 2,
+  "entries": [
+    {
+      "id": "6e844381-83a1-48ac-bfeb-ab4405dfe738",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: 上次回答超过一百字了吗 A: 已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "payload": {
+        "question": "上次回答超过一百字了吗",
+        "answer_excerpt": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+        "sources": [],
+        "history_turns": 8,
+        "subject_key": "turn:memory:memory"
+      },
+      "subject_key": "turn:memory:memory",
+      "source_refs": [],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-05T04:04:38Z",
+      "updated_at": "2026-04-05T04:04:38Z",
+      "expires_at": "2026-04-08T04:04:38Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/6e844381-83a1-48ac-bfeb-ab4405dfe738",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:04:38Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "bf76b500-3cc3-4c05-9214-6c1c07bea919",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent task state",
+      "summary": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "payload": {
+        "question": "总结一下Anthropic——长时运行智能体的有效Harness.md这个文档",
+        "answer_excerpt": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+        "history_turns": 8,
+        "subject_key": "task:anthropic-harness"
+      },
+      "subject_key": "task:anthropic-harness",
+      "source_refs": [
+        "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+      ],
+      "tags": [
+        "task",
+        "recent"
+      ],
+      "confidence": 0.72,
+      "created_at": "2026-04-05T04:03:50Z",
+      "updated_at": "2026-04-05T04:03:50Z",
+      "expires_at": "2026-04-19T04:03:50Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/bf76b500-3cc3-4c05-9214-6c1c07bea919",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:03:50Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "2d23e157-f247-48ee-8c93-bde33df6579e",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent document focus",
+      "summary": "Recent discussion referenced Anthropic——长时运行智能体的有效Harness.md.",
+      "payload": {
+        "question": "总结一下Anthropic——长时运行智能体的有效Harness.md这个文档",
+        "sources": [
+          "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+        ],
+        "subject_key": "recent_source:data-docs-anthropic-harness-md"
+      },
+      "subject_key": "recent_source:data-docs-anthropic-harness-md",
+      "source_refs": [
+        "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+      ],
+      "tags": [
+        "document",
+        "recent"
+      ],
+      "confidence": 0.78,
+      "created_at": "2026-04-05T04:03:50Z",
+      "updated_at": "2026-04-05T04:03:50Z",
+      "expires_at": "2026-04-19T04:03:50Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/2d23e157-f247-48ee-8c93-bde33df6579e",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:03:50Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "100f8eaa-279b-4d2a-981b-fce6cb69fbfc",
+      "memory_type": "working_summary",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Working summary",
+      "summary": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "payload": {
+        "question": "总结一下Anthropic——长时运行智能体的有效Harness.md这个文档",
+        "answer_excerpt": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+        "sources": [
+          "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+        ],
+        "subject_key": "working:anthropic-harness-md"
+      },
+      "subject_key": "working:anthropic-harness-md",
+      "source_refs": [
+        "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+      ],
+      "tags": [
+        "working",
+        "summary"
+      ],
+      "confidence": 0.84,
+      "created_at": "2026-04-05T04:03:50Z",
+      "updated_at": "2026-04-05T04:03:50Z",
+      "expires_at": "2026-04-12T04:03:50Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/100f8eaa-279b-4d2a-981b-fce6cb69fbfc",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:03:50Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "2228de66-62df-4882-8b16-b20af2f90e96",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: 总结一下Anthropic——长时运行智能体的有效Harness.md这个文档 A: 根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "payload": {
+        "question": "总结一下Anthropic——长时运行智能体的有效Harness.md这个文档",
+        "answer_excerpt": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+        "sources": [
+          "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+        ],
+        "history_turns": 8,
+        "subject_key": "turn:anthropic-harness-md:anthropic-harness"
+      },
+      "subject_key": "turn:anthropic-harness-md:anthropic-harness",
+      "source_refs": [
+        "data/docs/Anthropic——长时运行智能体的有效Harness.md"
+      ],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-05T04:03:50Z",
+      "updated_at": "2026-04-05T04:03:50Z",
+      "expires_at": "2026-04-08T04:03:50Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/2228de66-62df-4882-8b16-b20af2f90e96",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:03:50Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "bb5ae981-d658-452a-a722-48a8652c33b4",
+      "memory_type": "pinned_preference",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Pinned memory",
+      "summary": "Remember: 以后回答不能超过一百字.",
+      "payload": {
+        "instruction": "以后回答不能超过一百字",
+        "subject_key": "pinned:memory",
+        "auto_approve": true
+      },
+      "subject_key": "pinned:memory",
+      "source_refs": [],
+      "tags": [
+        "preference",
+        "explicit"
+      ],
+      "confidence": 0.94,
+      "created_at": "2026-04-05T04:02:13Z",
+      "updated_at": "2026-04-05T04:02:13Z",
+      "expires_at": null,
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/bb5ae981-d658-452a-a722-48a8652c33b4",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T04:02:13Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "5b55a5a2-c49d-471a-8267-173d794792c4",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent task state",
+      "summary": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "payload": {
+        "question": "记住以后用中文回答",
+        "answer_excerpt": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+        "history_turns": 4,
+        "subject_key": "task:memory"
+      },
+      "subject_key": "task:memory",
+      "source_refs": [],
+      "tags": [
+        "task",
+        "recent"
+      ],
+      "confidence": 0.72,
+      "created_at": "2026-04-05T03:38:14Z",
+      "updated_at": "2026-04-05T03:38:14Z",
+      "expires_at": "2026-04-19T03:38:14Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/5b55a5a2-c49d-471a-8267-173d794792c4",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:38:14Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "4e7e152a-92a1-4916-a81c-6a250030a915",
+      "memory_type": "pinned_preference",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Language preference",
+      "summary": "Prefer Chinese responses.",
+      "payload": {
+        "preference_key": "response_language",
+        "value": "zh-CN",
+        "subject_key": "preference:response_language",
+        "auto_approve": true
+      },
+      "subject_key": "preference:response_language",
+      "source_refs": [],
+      "tags": [
+        "preference",
+        "language"
+      ],
+      "confidence": 0.96,
+      "created_at": "2026-04-05T03:38:14Z",
+      "updated_at": "2026-04-05T03:38:14Z",
+      "expires_at": null,
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/4e7e152a-92a1-4916-a81c-6a250030a915",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:38:14Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "d7700121-d324-421a-a318-c5ae686aee78",
+      "memory_type": "working_summary",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Working summary",
+      "summary": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "payload": {
+        "question": "记住以后用中文回答",
+        "answer_excerpt": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+        "sources": [],
+        "subject_key": "working:memory"
+      },
+      "subject_key": "working:memory",
+      "source_refs": [],
+      "tags": [
+        "working",
+        "summary"
+      ],
+      "confidence": 0.84,
+      "created_at": "2026-04-05T03:38:14Z",
+      "updated_at": "2026-04-05T03:38:14Z",
+      "expires_at": "2026-04-12T03:38:14Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/d7700121-d324-421a-a318-c5ae686aee78",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:38:14Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "f448ace5-2ab5-4221-bade-9ac634f88d0a",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: 记住以后用中文回答 A: 已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "payload": {
+        "question": "记住以后用中文回答",
+        "answer_excerpt": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+        "sources": [],
+        "history_turns": 4,
+        "subject_key": "turn:memory:memory"
+      },
+      "subject_key": "turn:memory:memory",
+      "source_refs": [],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-05T03:38:14Z",
+      "updated_at": "2026-04-05T03:38:14Z",
+      "expires_at": "2026-04-08T03:38:14Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/f448ace5-2ab5-4221-bade-9ac634f88d0a",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:38:14Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "54b5f6f4-dc88-47af-a064-5e24f1e10ecd",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent task state",
+      "summary": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+        "history_turns": 2,
+        "subject_key": "task:1"
+      },
+      "subject_key": "task:1",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "task",
+        "recent"
+      ],
+      "confidence": 0.72,
+      "created_at": "2026-04-05T03:36:40Z",
+      "updated_at": "2026-04-05T03:36:40Z",
+      "expires_at": "2026-04-19T03:36:40Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/54b5f6f4-dc88-47af-a064-5e24f1e10ecd",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:36:40Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "5f3ddb96-3292-48bc-80fc-07343c544906",
+      "memory_type": "working_summary",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Working summary",
+      "summary": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+        "sources": [
+          "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+        ],
+        "subject_key": "working:memory"
+      },
+      "subject_key": "working:memory",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "working",
+        "summary"
+      ],
+      "confidence": 0.84,
+      "created_at": "2026-04-05T03:36:40Z",
+      "updated_at": "2026-04-05T03:36:40Z",
+      "expires_at": "2026-04-12T03:36:40Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/5f3ddb96-3292-48bc-80fc-07343c544906",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:36:40Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "085785a1-f954-4b77-9192-21e79af6a825",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: 递归学习法的操作协议是什么 A: 根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+        "sources": [
+          "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+        ],
+        "history_turns": 2,
+        "subject_key": "turn:memory:1"
+      },
+      "subject_key": "turn:memory:1",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-05T03:36:40Z",
+      "updated_at": "2026-04-05T03:36:40Z",
+      "expires_at": "2026-04-08T03:36:40Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/085785a1-f954-4b77-9192-21e79af6a825",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-05T03:36:40Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "a4a4457d-04bc-425d-9748-9ea16c9f8f7a",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent task state",
+      "summary": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+        "history_turns": 0,
+        "subject_key": "task:1"
+      },
+      "subject_key": "task:1",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "task",
+        "recent"
+      ],
+      "confidence": 0.72,
+      "created_at": "2026-04-04T16:05:28Z",
+      "updated_at": "2026-04-04T16:05:28Z",
+      "expires_at": "2026-04-18T16:05:28Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/a4a4457d-04bc-425d-9748-9ea16c9f8f7a",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-04T16:05:28Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "54becd7a-ccb4-4f45-89ff-fbca313f3ba2",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent document focus",
+      "summary": "Recent discussion referenced 递归学习与第一性原理求职——AI时代的方法论.md.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "sources": [
+          "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+        ],
+        "subject_key": "recent_source:data-docs-ai-md"
+      },
+      "subject_key": "recent_source:data-docs-ai-md",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "document",
+        "recent"
+      ],
+      "confidence": 0.78,
+      "created_at": "2026-04-04T16:05:28Z",
+      "updated_at": "2026-04-04T16:05:28Z",
+      "expires_at": "2026-04-18T16:05:28Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/54becd7a-ccb4-4f45-89ff-fbca313f3ba2",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-04T16:05:28Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "30f5d050-f8a2-43a6-8981-3baabe4d7b70",
+      "memory_type": "working_summary",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Working summary",
+      "summary": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+        "sources": [
+          "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+        ],
+        "subject_key": "working:memory"
+      },
+      "subject_key": "working:memory",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "working",
+        "summary"
+      ],
+      "confidence": 0.84,
+      "created_at": "2026-04-04T16:05:28Z",
+      "updated_at": "2026-04-04T16:05:28Z",
+      "expires_at": "2026-04-11T16:05:28Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/30f5d050-f8a2-43a6-8981-3baabe4d7b70",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-04T16:05:28Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "3f1f2679-01f5-4f05-bc0e-94c3d954275e",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: 递归学习法的操作协议是什么 A: 根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "payload": {
+        "question": "递归学习法的操作协议是什么",
+        "answer_excerpt": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+        "sources": [
+          "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+        ],
+        "history_turns": 0,
+        "subject_key": "turn:memory:1"
+      },
+      "subject_key": "turn:memory:1",
+      "source_refs": [
+        "data/docs/递归学习与第一性原理求职——AI时代的方法论.md"
+      ],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-04T16:05:28Z",
+      "updated_at": "2026-04-04T16:05:28Z",
+      "expires_at": "2026-04-07T16:05:28Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/3f1f2679-01f5-4f05-bc0e-94c3d954275e",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-04T16:05:28Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "8cffa45b-bc91-44af-b804-5772e7cb6949",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent task state",
+      "summary": "answer",
+      "payload": {
+        "question": "What is Chroma?",
+        "answer_excerpt": "answer",
+        "history_turns": 0,
+        "subject_key": "task:answer"
+      },
+      "subject_key": "task:answer",
+      "source_refs": [
+        "data/docs/project_intro.txt"
+      ],
+      "tags": [
+        "task",
+        "recent"
+      ],
+      "confidence": 0.72,
+      "created_at": "2026-04-01T10:53:27Z",
+      "updated_at": "2026-04-01T10:53:27Z",
+      "expires_at": "2026-04-15T10:53:27Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/8cffa45b-bc91-44af-b804-5772e7cb6949",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-01T10:53:27Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "150b1652-e1ff-4084-bbad-03e1fcb1b989",
+      "memory_type": "recent_task_state",
+      "layer": "L1",
+      "scope": "cross_thread",
+      "status": "approved",
+      "title": "Recent document focus",
+      "summary": "Recent discussion referenced project_intro.txt.",
+      "payload": {
+        "question": "What is Chroma?",
+        "sources": [
+          "data/docs/project_intro.txt"
+        ],
+        "subject_key": "recent_source:data-docs-project-intro-txt"
+      },
+      "subject_key": "recent_source:data-docs-project-intro-txt",
+      "source_refs": [
+        "data/docs/project_intro.txt"
+      ],
+      "tags": [
+        "document",
+        "recent"
+      ],
+      "confidence": 0.78,
+      "created_at": "2026-04-01T10:53:27Z",
+      "updated_at": "2026-04-01T10:53:27Z",
+      "expires_at": "2026-04-15T10:53:27Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l1/150b1652-e1ff-4084-bbad-03e1fcb1b989",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-01T10:53:27Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "34b8be5b-0b3c-4935-8979-9ac71dd6a020",
+      "memory_type": "working_summary",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Working summary",
+      "summary": "answer",
+      "payload": {
+        "question": "What is Chroma?",
+        "answer_excerpt": "answer",
+        "sources": [
+          "data/docs/project_intro.txt"
+        ],
+        "subject_key": "working:what-is-chroma"
+      },
+      "subject_key": "working:what-is-chroma",
+      "source_refs": [
+        "data/docs/project_intro.txt"
+      ],
+      "tags": [
+        "working",
+        "summary"
+      ],
+      "confidence": 0.84,
+      "created_at": "2026-04-01T10:53:27Z",
+      "updated_at": "2026-04-01T10:53:27Z",
+      "expires_at": "2026-04-08T10:53:27Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/34b8be5b-0b3c-4935-8979-9ac71dd6a020",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-01T10:53:27Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    },
+    {
+      "id": "e6281f34-a637-414f-a125-8a1e360e2c5e",
+      "memory_type": "raw_turn_log",
+      "layer": "L0",
+      "scope": "session",
+      "status": "approved",
+      "title": "Conversation turn",
+      "summary": "Q: What is Chroma? A: answer",
+      "payload": {
+        "question": "What is Chroma?",
+        "answer_excerpt": "answer",
+        "sources": [
+          "data/docs/project_intro.txt"
+        ],
+        "history_turns": 0,
+        "subject_key": "turn:what-is-chroma:answer"
+      },
+      "subject_key": "turn:what-is-chroma:answer",
+      "source_refs": [
+        "data/docs/project_intro.txt"
+      ],
+      "tags": [
+        "turn",
+        "session"
+      ],
+      "confidence": 1.0,
+      "created_at": "2026-04-01T10:53:27Z",
+      "updated_at": "2026-04-01T10:53:27Z",
+      "expires_at": "2026-04-04T10:53:27Z",
+      "openviking_resource_uri": "viking://resources/askrag/memory/l0/e6281f34-a637-414f-a125-8a1e360e2c5e",
+      "openviking_sync_status": "sync_error",
+      "approved_at": "2026-04-01T10:53:27Z",
+      "openviking_last_sync_error": "Error: Network error: HTTP request failed: error sending request for url (http://localhost:1933/health)"
+    }
+  ],
+  "audit": [
+    {
+      "timestamp": "2026-04-05T04:04:38Z",
+      "action": "extract",
+      "memory_id": "6e844381-83a1-48ac-bfeb-ab4405dfe738",
+      "summary": "Q: 上次回答超过一百字了吗 A: 已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "memory_type": "raw_turn_log"
+    },
+    {
+      "timestamp": "2026-04-05T04:03:57Z",
+      "action": "extract",
+      "memory_id": "bf76b500-3cc3-4c05-9214-6c1c07bea919",
+      "summary": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-05T04:03:55Z",
+      "action": "extract",
+      "memory_id": "2d23e157-f247-48ee-8c93-bde33df6579e",
+      "summary": "Recent discussion referenced Anthropic——长时运行智能体的有效Harness.md.",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-05T04:03:52Z",
+      "action": "extract",
+      "memory_id": "100f8eaa-279b-4d2a-981b-fce6cb69fbfc",
+      "summary": "根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "memory_type": "working_summary"
+    },
+    {
+      "timestamp": "2026-04-05T04:03:50Z",
+      "action": "extract",
+      "memory_id": "2228de66-62df-4882-8b16-b20af2f90e96",
+      "summary": "Q: 总结一下Anthropic——长时运行智能体的有效Harness.md这个文档 A: 根据提供的文档，以下是“Anthropic——长时运行智能体的有效Harness”的总结： 该文档讨论了在处理复杂、跨多个上下文窗口的任务时，智能体面临的“换班工程师”困境，即每个新会话都会完全失忆，导致信息压缩不足，无法清晰传递指令。",
+      "memory_type": "raw_turn_log"
+    },
+    {
+      "timestamp": "2026-04-05T04:02:13Z",
+      "action": "extract",
+      "memory_id": "bb5ae981-d658-452a-a722-48a8652c33b4",
+      "summary": "Remember: 以后回答不能超过一百字.",
+      "memory_type": "pinned_preference"
+    },
+    {
+      "timestamp": "2026-04-05T03:38:22Z",
+      "action": "extract",
+      "memory_id": "5b55a5a2-c49d-471a-8267-173d794792c4",
+      "summary": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-05T03:38:19Z",
+      "action": "extract",
+      "memory_id": "4e7e152a-92a1-4916-a81c-6a250030a915",
+      "summary": "Prefer Chinese responses.",
+      "memory_type": "pinned_preference"
+    },
+    {
+      "timestamp": "2026-04-05T03:38:17Z",
+      "action": "extract",
+      "memory_id": "d7700121-d324-421a-a318-c5ae686aee78",
+      "summary": "已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "memory_type": "working_summary"
+    },
+    {
+      "timestamp": "2026-04-05T03:38:14Z",
+      "action": "extract",
+      "memory_id": "f448ace5-2ab5-4221-bade-9ac634f88d0a",
+      "summary": "Q: 记住以后用中文回答 A: 已尝试联网检索，但当前结果与问题不够相关或证据不足，无法可靠回答。",
+      "memory_type": "raw_turn_log"
+    },
+    {
+      "timestamp": "2026-04-05T03:36:45Z",
+      "action": "extract",
+      "memory_id": "54b5f6f4-dc88-47af-a064-5e24f1e10ecd",
+      "summary": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-05T03:36:42Z",
+      "action": "extract",
+      "memory_id": "5f3ddb96-3292-48bc-80fc-07343c544906",
+      "summary": "根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "memory_type": "working_summary"
+    },
+    {
+      "timestamp": "2026-04-05T03:36:40Z",
+      "action": "extract",
+      "memory_id": "085785a1-f954-4b77-9192-21e79af6a825",
+      "summary": "Q: 递归学习法的操作协议是什么 A: 根据提供的上下文，递归学习法的操作协议如下： 1.",
+      "memory_type": "raw_turn_log"
+    },
+    {
+      "timestamp": "2026-04-04T16:05:35Z",
+      "action": "extract",
+      "memory_id": "a4a4457d-04bc-425d-9748-9ea16c9f8f7a",
+      "summary": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-04T16:05:33Z",
+      "action": "extract",
+      "memory_id": "54becd7a-ccb4-4f45-89ff-fbca313f3ba2",
+      "summary": "Recent discussion referenced 递归学习与第一性原理求职——AI时代的方法论.md.",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-04T16:05:30Z",
+      "action": "extract",
+      "memory_id": "30f5d050-f8a2-43a6-8981-3baabe4d7b70",
+      "summary": "根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "memory_type": "working_summary"
+    },
+    {
+      "timestamp": "2026-04-04T16:05:28Z",
+      "action": "extract",
+      "memory_id": "3f1f2679-01f5-4f05-bc0e-94c3d954275e",
+      "summary": "Q: 递归学习法的操作协议是什么 A: 根据提供的上下文，无法可靠回答完整的操作协议。现有片段仅显示其中一步：1.",
+      "memory_type": "raw_turn_log"
+    },
+    {
+      "timestamp": "2026-04-01T10:53:34Z",
+      "action": "extract",
+      "memory_id": "8cffa45b-bc91-44af-b804-5772e7cb6949",
+      "summary": "answer",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-01T10:53:32Z",
+      "action": "extract",
+      "memory_id": "150b1652-e1ff-4084-bbad-03e1fcb1b989",
+      "summary": "Recent discussion referenced project_intro.txt.",
+      "memory_type": "recent_task_state"
+    },
+    {
+      "timestamp": "2026-04-01T10:53:29Z",
+      "action": "extract",
+      "memory_id": "34b8be5b-0b3c-4935-8979-9ac71dd6a020",
+      "summary": "answer",
+      "memory_type": "working_summary"
+    },
+    {
+      "timestamp": "2026-04-01T10:53:27Z",
+      "action": "extract",
+      "memory_id": "e6281f34-a637-414f-a125-8a1e360e2c5e",
+      "summary": "Q: What is Chroma? A: answer",
+      "memory_type": "raw_turn_log"
+    }
+  ]
+}
