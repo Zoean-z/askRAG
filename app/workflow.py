@@ -1787,6 +1787,9 @@ def finalize_retrieval_answer(state: WorkflowState) -> WorkflowRunResult:
 def stream_finalize_retrieval_answer(
     state: WorkflowState,
 ) -> Iterator[tuple[str, dict]]:
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     _advance_step(state, "summarize")
     yield _progress("workflow_summarize", state)
     state.summarize_attempted = True
@@ -1800,8 +1803,25 @@ def stream_finalize_retrieval_answer(
     if not context.strip() or (not state.combined_sufficient and not local_with_web_caveat):
         state.final_answer = _workflow_fallback_answer(state)
         state.sources = final_sources
+        log_diagnostic_event(
+            "summary_stream_first_token",
+            started_at=started_at,
+            question=state.question,
+            source=state.sources[0] if state.sources else None,
+            mode="workflow_stream_fallback",
+            emitted_text=True,
+        )
         yield "delta", {"text": state.final_answer}
         _refresh_trace(state)
+        log_diagnostic_event(
+            "finalize_answer_complete",
+            started_at=started_at,
+            question=state.question,
+            mode="workflow_stream_fallback",
+            source_count=len(state.sources),
+            selected_source=state.sources[0] if state.sources else None,
+            local_with_web_caveat=local_with_web_caveat,
+        )
         yield "trace", state.trace
         yield _progress("workflow_done", state)
         yield "done", {}
@@ -1809,21 +1829,40 @@ def stream_finalize_retrieval_answer(
 
     standalone_question = state.local_bundle.rewritten_question if state.local_bundle else None
     client = get_chat_client()
+    workflow_messages = _build_workflow_messages(
+        state.question,
+        context,
+        history=state.history,
+        standalone_question=standalone_question,
+        used_web=bool(state.web_attempted and state.web_relevant and not local_with_web_caveat),
+        response_constraints=response_constraints,
+    )
+    log_diagnostic_event(
+        "summary_prompt_ready",
+        started_at=started_at,
+        question=state.question,
+        source=final_sources[0] if final_sources else None,
+        mode="workflow_stream_finalize",
+        history_count=len(state.history),
+        context_chars=len(context),
+        prompt_chars=sum(len(str(item.get("content", ""))) for item in workflow_messages),
+        message_count=len(workflow_messages),
+        system_chars=len(str(workflow_messages[0].get("content", ""))) if workflow_messages else 0,
+        user_chars=len(str(workflow_messages[1].get("content", ""))) if len(workflow_messages) > 1 else 0,
+        web_attempted=state.web_attempted,
+        web_relevant=state.web_relevant,
+        local_with_web_caveat=local_with_web_caveat,
+        source_count=len(final_sources),
+    )
     stream = client.chat.completions.create(
         model=get_chat_model(),
         temperature=0.2,
-        messages=_build_workflow_messages(
-            state.question,
-            context,
-            history=state.history,
-            standalone_question=standalone_question,
-            used_web=bool(state.web_attempted and state.web_relevant and not local_with_web_caveat),
-            response_constraints=response_constraints,
-        ),
+        messages=workflow_messages,
         stream=True,
     )
 
     has_text = False
+    first_token_logged = False
     for chunk in stream:
         if not chunk.choices:
             continue
@@ -1832,14 +1871,59 @@ def stream_finalize_retrieval_answer(
         if not text:
             continue
         has_text = True
+        if not first_token_logged:
+            log_diagnostic_event(
+                "summary_stream_first_token",
+                started_at=started_at,
+                question=state.question,
+                source=final_sources[0] if final_sources else None,
+                mode="workflow_stream_finalize",
+                web_attempted=state.web_attempted,
+                web_relevant=state.web_relevant,
+                local_with_web_caveat=local_with_web_caveat,
+            )
+            first_token_logged = True
         yield "delta", {"text": text}
 
     if not has_text:
+        log_diagnostic_event(
+            "summary_stream_first_token",
+            started_at=started_at,
+            question=state.question,
+            source=final_sources[0] if final_sources else None,
+            mode="workflow_stream_finalize_empty",
+            web_attempted=state.web_attempted,
+            web_relevant=state.web_relevant,
+            local_with_web_caveat=local_with_web_caveat,
+            emitted_text=False,
+        )
         yield "delta", {"text": EMPTY_ANSWER_MESSAGE}
 
     if local_with_web_caveat:
         yield "delta", {"text": f"\n\n{WEB_SUPPLEMENT_INSUFFICIENT_NOTICE}"}
 
+    log_diagnostic_event(
+        "summary_stream_complete",
+        started_at=started_at,
+        question=state.question,
+        source=final_sources[0] if final_sources else None,
+        mode="workflow_stream_finalize",
+        web_attempted=state.web_attempted,
+        web_relevant=state.web_relevant,
+        local_with_web_caveat=local_with_web_caveat,
+        emitted_text=has_text,
+    )
+    log_diagnostic_event(
+        "finalize_answer_complete",
+        started_at=started_at,
+        question=state.question,
+        mode="workflow_stream_finalize",
+        source_count=len(final_sources),
+        selected_source=final_sources[0] if final_sources else None,
+        local_with_web_caveat=local_with_web_caveat,
+        web_attempted=state.web_attempted,
+        web_relevant=state.web_relevant,
+    )
     _refresh_trace(state)
     yield "trace", state.trace
     yield _progress("workflow_done", state)

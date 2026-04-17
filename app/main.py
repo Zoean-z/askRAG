@@ -52,6 +52,7 @@ from app.schemas import (
 from app.session_memory import (
     approve_memory_entry,
     build_explicit_memory_command_reply,
+    delete_memory_entries_for_conversation,
     extract_explicit_memory_command_candidates,
     extract_memory_candidates,
     list_memory_entries,
@@ -167,11 +168,16 @@ def _build_explicit_memory_trace(question: str, stored_entries: list[dict] | Non
     }
 
 
-def _handle_explicit_memory_command(question: str, history: list[dict[str, str]]) -> tuple[str, list[dict], dict] | None:
+def _handle_explicit_memory_command(
+    question: str,
+    history: list[dict[str, str]],
+    *,
+    conversation_id: str | None = None,
+) -> tuple[str, list[dict], dict] | None:
     candidates = extract_explicit_memory_command_candidates(question=question, history=history)
     if not candidates:
         return None
-    stored_entries = persist_memory_candidates(candidates)
+    stored_entries = persist_memory_candidates(candidates, conversation_id=conversation_id)
     trace = _build_explicit_memory_trace(question, stored_entries)
     display_entries = stored_entries or candidates
     answer = build_explicit_memory_command_reply(question, display_entries)
@@ -225,6 +231,13 @@ async def delete_conversation_route(conversation_id: str) -> ConversationDeleteR
         conversation = delete_conversation(conversation_id)
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+    try:
+        delete_memory_entries_for_conversation(
+            conversation_id,
+            conversation_messages=conversation.get("messages") or [],
+        )
+    except Exception:
+        pass
     return ConversationDeleteResponse(status="deleted", conversation=_conversation_record(conversation))
 
 
@@ -293,7 +306,7 @@ async def ask(request: AskRequest) -> AskResponse:
     conversation = ensure_conversation(request.conversation_id)
     append_conversation_message(conversation["id"], role="user", content=question)
 
-    explicit_memory_result = _handle_explicit_memory_command(question, history)
+    explicit_memory_result = _handle_explicit_memory_command(question, history, conversation_id=conversation["id"])
     if explicit_memory_result is not None:
         answer, stored_entries, trace = explicit_memory_result
         memory_notices = _build_memory_notices(stored_entries, trace)
@@ -323,6 +336,7 @@ async def ask(request: AskRequest) -> AskResponse:
             question,
             history=history,
             allow_web_search=bool(request.use_web_search),
+            conversation_id=conversation["id"],
         ):
             if event_name == "sources":
                 collected_sources = [str(item) for item in payload.get("sources", []) if str(item).strip()]
@@ -386,7 +400,7 @@ async def ask_stream(request: AskRequest) -> StreamingResponse:
     conversation = ensure_conversation(request.conversation_id)
     append_conversation_message(conversation["id"], role="user", content=question)
 
-    explicit_memory_result = _handle_explicit_memory_command(question, history)
+    explicit_memory_result = _handle_explicit_memory_command(question, history, conversation_id=conversation["id"])
     if explicit_memory_result is not None:
         answer, stored_entries, trace = explicit_memory_result
         memory_notices = _build_memory_notices(stored_entries, trace)
@@ -436,6 +450,7 @@ async def ask_stream(request: AskRequest) -> StreamingResponse:
                 question,
                 history=history,
                 allow_web_search=bool(request.use_web_search),
+                conversation_id=conversation["id"],
             ):
                 if event_name == "sources":
                     collected_sources = [str(item) for item in payload.get("sources", []) if str(item).strip()]

@@ -420,6 +420,23 @@ def is_summary_request(question: str, history: list[dict[str, str]] | None = Non
     if any(term in normalized for term in explicit_summary_terms):
         return True
 
+    doc_summary_terms = (
+        "概览",
+        "整体介绍",
+        "简单介绍",
+        "讲什么",
+        "主要内容",
+        "这篇文档",
+        "这个文档",
+        "这个文件",
+        "这份文档",
+        "这份文件",
+        "文档内容",
+        "文件内容",
+    )
+    if any(term in normalized for term in doc_summary_terms) and has_document_reference(question, history=history):
+        return True
+
     document_evaluation_terms = ("评价", "分析", "点评", "解读")
     return any(term in normalized for term in document_evaluation_terms) and has_document_reference(question, history=history)
 
@@ -1366,10 +1383,17 @@ def stream_answer_question(
     history: list[dict[str, str]] | None = None,
     k: int = 3,
     allow_web_search: bool = True,
+    conversation_id: str | None = None,
 ) -> Iterator[tuple[str, dict]]:
     from app.pipeline import stream_answer_question as pipeline_stream_answer_question
 
-    yield from pipeline_stream_answer_question(question, history=history, k=k, allow_web_search=allow_web_search)
+    yield from pipeline_stream_answer_question(
+        question,
+        history=history,
+        k=k,
+        allow_web_search=allow_web_search,
+        conversation_id=conversation_id,
+    )
 
 
 def run_split_demo() -> None:

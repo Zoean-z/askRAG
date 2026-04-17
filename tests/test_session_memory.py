@@ -11,15 +11,19 @@ class SessionMemoryTests(unittest.TestCase):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.memory_path = Path(self.temp_dir.name) / "memory_registry.json"
         self.legacy_path = Path(self.temp_dir.name) / "session_memory.json"
+        self.memory_docs_dir = Path(self.temp_dir.name) / "memory_docs"
         self.store_patcher = patch.object(session_memory, "MEMORY_STORE_PATH", self.memory_path)
         self.legacy_patcher = patch.object(session_memory, "LEGACY_MEMORY_STORE_PATH", self.legacy_path)
+        self.docs_patcher = patch.object(session_memory, "MEMORY_DOCS_DIR", self.memory_docs_dir)
         self.sync_patcher = patch.object(session_memory, "_sync_entry_to_openviking", lambda entry: entry.update({"openviking_sync_status": "test_synced"}))
         self.store_patcher.start()
         self.legacy_patcher.start()
+        self.docs_patcher.start()
         self.sync_patcher.start()
 
     def tearDown(self):
         self.sync_patcher.stop()
+        self.docs_patcher.stop()
         self.legacy_patcher.stop()
         self.store_patcher.stop()
         self.temp_dir.cleanup()
@@ -212,6 +216,63 @@ class SessionMemoryTests(unittest.TestCase):
 
         self.assertIn("Recent discussion referenced project_intro.txt.", context)
 
+    def test_find_recent_task_memory_context_prefers_recent_task_state(self):
+        session_memory.record_completed_turn(
+            question="今天任务是学习ralph-superpowers-integration.md",
+            answer="We are focusing on ralph-superpowers-integration.md and the Ralph/Superpowers workflow.",
+            sources=["data/docs/ralph-superpowers-integration.md"],
+            history=[],
+        )
+        session_memory.record_completed_turn(
+            question="任务是什么",
+            answer="根据当前知识库内容，我暂时无法可靠回答这个问题。",
+            sources=[],
+            history=[],
+        )
+
+        context = session_memory.find_recent_task_memory_context("任务是什么", history=[], sources=[])
+
+        self.assertIsNotNone(context)
+        assert context is not None
+        self.assertIn("recent_task_state", context)
+        self.assertIn("ralph-superpowers-integration.md", context)
+        self.assertNotIn("根据当前知识库内容", context)
+
+    def test_memory_recall_questions_do_not_create_new_task_state(self):
+        stored = session_memory.record_completed_turn(
+            question="任务是什么",
+            answer="我们正在检查当前任务记忆。",
+            sources=[],
+            history=[],
+        )
+
+        self.assertEqual(stored, [])
+
+    def test_profile_recall_questions_do_not_create_new_memory_state(self):
+        stored = session_memory.record_completed_turn(
+            question="我住在哪里",
+            answer="你住在中国长沙。",
+            sources=[],
+            history=[],
+        )
+
+        self.assertEqual(stored, [])
+
+    def test_find_profile_memory_context_prefers_profile_fact(self):
+        session_memory.record_completed_turn(
+            question="我住在中国长沙",
+            answer="你住在中国长沙。",
+            sources=[],
+            history=[],
+        )
+
+        context = session_memory.find_profile_memory_context("我住在哪里", history=[], sources=[])
+
+        self.assertIsNotNone(context)
+        assert context is not None
+        self.assertIn("stable_profile_fact", context)
+        self.assertIn("长沙", context)
+
     def test_build_reference_history_reconstructs_recent_turns_from_memory(self):
         session_memory.record_completed_turn(
             question="What is Chroma used for?",
@@ -239,6 +300,33 @@ class SessionMemoryTests(unittest.TestCase):
         self.assertIn("raw_turn_log", memory_types)
         self.assertIn("working_summary", memory_types)
         self.assertIn("pinned_preference", memory_types)
+
+    def test_delete_memory_entries_for_conversation_removes_bound_entries(self):
+        session_memory.persist_memory_candidates(
+            session_memory.extract_memory_candidates(
+                question="Remember I prefer Chinese responses.",
+                answer="",
+                sources=[],
+                history=[],
+            ),
+            conversation_id="conversation-a",
+        )
+        session_memory.persist_memory_candidates(
+            session_memory.extract_memory_candidates(
+                question="Remember answers under 100 chars.",
+                answer="",
+                sources=[],
+                history=[],
+            ),
+            conversation_id="conversation-b",
+        )
+
+        deleted = session_memory.delete_memory_entries_for_conversation("conversation-a")
+        remaining = session_memory.list_memory_entries(include_pending=True, include_rolled_back=True, include_superseded=True)
+
+        self.assertGreaterEqual(deleted["deleted_count"], 1)
+        self.assertTrue(all(entry.get("conversation_id") != "conversation-a" for entry in remaining))
+        self.assertTrue(any(entry.get("conversation_id") == "conversation-b" for entry in remaining))
 
     def test_cross_thread_preference_recall_is_available_without_history(self):
         session_memory.record_completed_turn(

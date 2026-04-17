@@ -38,7 +38,15 @@ from app.retrievers.chunk_retriever import (
     resolve_target_source_hint,
     retrieve_vector_documents,
 )
-from app.session_memory import build_memory_context, build_reference_history, record_completed_turn
+from app.session_memory import (
+    build_memory_context,
+    build_reference_history,
+    find_profile_memory_context,
+    find_recent_task_memory_context,
+    is_profile_query,
+    is_recent_task_query,
+    record_completed_turn,
+)
 from app.tool_router import ToolPlan, extract_target_source_hint, is_web_search_request
 from app.validators import RetrievalValidation, validate_chunk_results
 from app.workflow import WorkflowState
@@ -506,6 +514,12 @@ def load_long_term_context(
     sources: list[str] | None = None,
 ) -> LongTermContextToolResult:
     reference_history = build_reference_history(question, history)
+    if is_recent_task_query(question):
+        task_context = find_recent_task_memory_context(question, history=reference_history, sources=sources)
+        return LongTermContextToolResult(reference_history=reference_history, memory_context=task_context or "")
+    if is_profile_query(question):
+        profile_context = build_memory_context(question, history=reference_history, sources=sources)
+        return LongTermContextToolResult(reference_history=reference_history, memory_context=profile_context)
     context = search_openviking_context(question, history=reference_history, sources=sources).context
     return LongTermContextToolResult(reference_history=reference_history, memory_context=context)
 
@@ -555,20 +569,31 @@ def persist_turn_memory_result(
     sources: list[str] | None = None,
     history: list[dict[str, str]] | None = None,
     trace: dict | None = None,
+    conversation_id: str | None = None,
 ) -> PersistTurnMemoryToolResult:
+    started_at = perf_counter()
     try:
         stored_entries = record_completed_turn(
             question=question,
             answer=answer,
             sources=sources,
             history=history,
+            conversation_id=conversation_id,
         )
     except Exception:
         stored_entries = []
-    return PersistTurnMemoryToolResult(
+    result = PersistTurnMemoryToolResult(
         stored_entries=stored_entries,
         memory_notices=build_memory_notices(stored_entries, trace),
     )
+    log_diagnostic_event(
+        "persist_turn_memory_complete",
+        started_at=started_at,
+        question=question,
+        stored_entry_count=len(result.stored_entries),
+        notice_count=len(result.memory_notices),
+    )
+    return result
 
 
 def decide_summary_strategy(

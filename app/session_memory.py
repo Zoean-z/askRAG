@@ -45,6 +45,64 @@ SHORT_LIVED_TYPES = {"raw_turn_log", "working_summary", "recent_task_state"}
 SUPERCEDING_TYPES = {"pinned_preference", "stable_profile_fact"}
 ALLOWED_STATUSES = ("pending", "approved", "rolled_back", "superseded")
 
+RECENT_TASK_QUERY_TERMS = (
+    "任务是什么",
+    "我们在做什么",
+    "我们现在在做什么",
+    "当前任务",
+    "最近任务",
+    "今天任务是什么",
+    "今天的任务是什么",
+    "今天要做什么",
+    "今天要做的任务",
+    "刚才做到哪",
+    "现在做到哪",
+    "做到哪一步",
+    "进度",
+    "进展",
+    "what are we doing",
+    "what is the task",
+    "current task",
+    "where are we at",
+    "what did we decide",
+)
+
+PROFILE_QUERY_TERMS = (
+    "我住在哪里",
+    "我住哪",
+    "我住哪里",
+    "我叫什么",
+    "我是谁",
+    "我来自哪里",
+    "where do i live",
+    "what is my name",
+    "who am i",
+    "where am i from",
+)
+
+PROFILE_QUERY_CATEGORY_TERMS = {
+    "location": (
+        "我住在哪里",
+        "我住哪",
+        "我住哪里",
+        "where do i live",
+        "where am i",
+        "where am i located",
+    ),
+    "name": (
+        "我叫什么",
+        "我叫啥",
+        "我是谁",
+        "what is my name",
+        "who am i",
+    ),
+    "origin": (
+        "我来自哪里",
+        "我从哪里来",
+        "where am i from",
+    ),
+}
+
 LANGUAGE_PATTERNS = (
     (
         re.compile(
@@ -301,6 +359,23 @@ def _memory_doc_path(entry: dict[str, Any]) -> Path:
     return MEMORY_DOCS_DIR / layer / f"{entry['id']}.md"
 
 
+def _normalize_conversation_id(value: str | None) -> str:
+    return str(value or "").strip()
+
+
+def _attach_conversation_context(entry: dict[str, Any], conversation_id: str | None) -> dict[str, Any]:
+    normalized = _normalize_conversation_id(conversation_id)
+    if not normalized:
+        return entry
+    entry["conversation_id"] = normalized
+    payload = entry.get("payload")
+    if not isinstance(payload, dict):
+        payload = {}
+    payload["conversation_id"] = normalized
+    entry["payload"] = payload
+    return entry
+
+
 def _memory_markdown(entry: dict[str, Any]) -> str:
     payload = json.dumps(entry.get("payload") or {}, ensure_ascii=False, indent=2)
     lines = [
@@ -376,10 +451,69 @@ def _sync_entry_to_openviking(entry: dict[str, Any]) -> None:
         entry["openviking_last_sync_error"] = message
 
 
+def _delete_entry_artifacts(entry: dict[str, Any]) -> None:
+    local_path = _memory_doc_path(entry)
+    try:
+        local_path.unlink(missing_ok=True)
+    except TypeError:  # pragma: no cover - Python < 3.8 compatibility fallback
+        if local_path.exists():
+            local_path.unlink()
+
+    resource_uri = str(entry.get("openviking_resource_uri") or "").strip()
+    if not resource_uri:
+        return
+
+    try:
+        from app import openviking_runtime
+
+        openviking_runtime._run_ov_command("rm", resource_uri, "-r", "-o", "json", timeout=30)
+    except Exception:  # pragma: no cover - best effort cleanup
+        return
+
+
 def _append_audit(store: dict[str, Any], action: str, memory_id: str, **detail: Any) -> None:
     audit = list(store.get("audit") or [])
     audit.insert(0, {"timestamp": utc_now(), "action": action, "memory_id": memory_id, **detail})
     store["audit"] = audit[:100]
+
+
+def _entry_matches_conversation(
+    entry: dict[str, Any],
+    *,
+    conversation_id: str,
+    conversation_texts: set[str],
+) -> bool:
+    normalized_conversation_id = _normalize_conversation_id(conversation_id)
+    if not normalized_conversation_id:
+        return False
+
+    payload = dict(entry.get("payload") or {})
+    entry_conversation_id = _normalize_conversation_id(entry.get("conversation_id") or payload.get("conversation_id"))
+    if entry_conversation_id and entry_conversation_id == normalized_conversation_id:
+        return True
+
+    if not conversation_texts:
+        return False
+
+    memory_type = str(entry.get("memory_type") or "")
+    if memory_type not in SHORT_LIVED_TYPES:
+        return False
+
+    candidate_texts = [
+        str(payload.get("question") or "").strip(),
+        str(payload.get("answer_excerpt") or "").strip(),
+        str(entry.get("summary") or "").strip(),
+    ]
+    for candidate in candidate_texts:
+        normalized_candidate = _normalize_text(candidate)
+        if not normalized_candidate:
+            continue
+        for text in conversation_texts:
+            if not text:
+                continue
+            if normalized_candidate == text or normalized_candidate in text or text in normalized_candidate:
+                return True
+    return False
 
 
 def _build_entry(
@@ -441,6 +575,7 @@ def _preference_entries(question: str) -> list[dict[str, Any]]:
                 "Language preference",
                 summary,
                 payload={
+                    "question": question.strip(),
                     "preference_key": "response_language",
                     "value": value,
                     "subject_key": "preference:response_language",
@@ -460,6 +595,7 @@ def _preference_entries(question: str) -> list[dict[str, Any]]:
                 "Response style preference",
                 summary,
                 payload={
+                    "question": question.strip(),
                     "preference_key": "response_style",
                     "value": value,
                     "subject_key": "preference:response_style",
@@ -478,6 +614,7 @@ def _preference_entries(question: str) -> list[dict[str, Any]]:
                 "Answer length preference",
                 f"Keep answers within {max_answer_chars} characters.",
                 payload={
+                    "question": question.strip(),
                     "preference_key": "max_answer_chars",
                     "value": max_answer_chars,
                     "subject_key": "preference:max_answer_chars",
@@ -495,6 +632,7 @@ def _preference_entries(question: str) -> list[dict[str, Any]]:
                 "Pinned memory",
                 f"Remember: {remembered}.",
                 payload={
+                    "question": question.strip(),
                     "instruction": remembered,
                     "subject_key": f"pinned:{_slugify(remembered)}",
                     "auto_approve": True,
@@ -520,6 +658,7 @@ def _profile_entries(question: str) -> list[dict[str, Any]]:
                 f"User {profile_key}",
                 summary_builder(normalized_value),
                 payload={
+                    "question": question.strip(),
                     "profile_key": profile_key,
                     "value": normalized_value,
                     "source": "user_stated",
@@ -824,7 +963,11 @@ def _supersede_conflicting_entries(store: dict[str, Any], candidate: dict[str, A
         _sync_entry_to_openviking(entry)
 
 
-def persist_memory_candidates(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def persist_memory_candidates(
+    candidates: list[dict[str, Any]],
+    *,
+    conversation_id: str | None = None,
+) -> list[dict[str, Any]]:
     store = read_memory_store()
     entries = list(store.get("entries") or [])
     store["entries"] = entries
@@ -843,6 +986,7 @@ def persist_memory_candidates(candidates: list[dict[str, Any]]) -> list[dict[str
 
     for raw_candidate in _dedupe_candidates(candidates):
         candidate = dict(raw_candidate)
+        _attach_conversation_context(candidate, conversation_id)
         candidate.setdefault("layer", _memory_type_to_layer(str(candidate.get("memory_type") or "")))
         candidate.setdefault("scope", _memory_type_to_scope(str(candidate.get("memory_type") or "")))
         candidate.setdefault("subject_key", _entry_subject_key(str(candidate.get("memory_type") or ""), dict(candidate.get("payload") or {}), str(candidate.get("summary") or "")))
@@ -945,6 +1089,52 @@ def update_memory_entry(
 
 def remove_memory_entry(memory_id: str, detail: str | None = None) -> dict[str, Any]:
     return _update_memory_status(memory_id, "rolled_back", action="delete", detail=detail or "user removed")
+
+
+def delete_memory_entries_for_conversation(
+    conversation_id: str,
+    *,
+    conversation_messages: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    normalized_conversation_id = _normalize_conversation_id(conversation_id)
+    if not normalized_conversation_id:
+        return {"deleted_count": 0, "deleted_ids": []}
+
+    store = read_memory_store()
+    entries = list(store.get("entries") or [])
+    conversation_texts = {
+        _normalize_text(str(item.get("content") or ""))
+        for item in (conversation_messages or [])
+        if isinstance(item, dict) and str(item.get("content") or "").strip()
+    }
+
+    kept: list[dict[str, Any]] = []
+    deleted_ids: list[str] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        if _entry_matches_conversation(
+            entry,
+            conversation_id=normalized_conversation_id,
+            conversation_texts=conversation_texts,
+        ):
+            deleted_id = str(entry.get("id") or "")
+            if deleted_id:
+                deleted_ids.append(deleted_id)
+            _append_audit(
+                store,
+                "delete_conversation",
+                deleted_id or normalized_conversation_id,
+                conversation_id=normalized_conversation_id,
+                memory_type=str(entry.get("memory_type") or ""),
+            )
+            _delete_entry_artifacts(entry)
+            continue
+        kept.append(entry)
+
+    store["entries"] = kept
+    write_memory_store(store)
+    return {"deleted_count": len(deleted_ids), "deleted_ids": deleted_ids}
 
 
 def _select_preferences(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1189,6 +1379,226 @@ def _format_memory_line(entry: dict[str, Any]) -> str:
     return f"- [{layer}] {memory_type}: {entry.get('summary')}"
 
 
+def is_recent_task_query(question: str) -> bool:
+    normalized = _normalize_text(question)
+    if not normalized:
+        return False
+    return any(term in normalized for term in RECENT_TASK_QUERY_TERMS)
+
+
+def is_profile_query(question: str) -> bool:
+    normalized = _normalize_text(question)
+    if not normalized:
+        return False
+    return any(term in normalized for term in PROFILE_QUERY_TERMS)
+
+
+def _profile_query_category(question: str) -> str | None:
+    normalized = _normalize_text(question)
+    if not normalized:
+        return None
+    for category, terms in PROFILE_QUERY_CATEGORY_TERMS.items():
+        if any(term in normalized for term in terms):
+            return category
+    return None
+
+
+def is_memory_recall_question(question: str) -> bool:
+    return is_recent_task_query(question) or is_profile_query(question)
+
+
+def _score_profile_entry(
+    entry: dict[str, Any],
+    *,
+    question: str,
+    history_text: str,
+    normalized_sources: set[str],
+    category: str | None,
+) -> int:
+    score = _score_relevant_entry(entry, question=question, history_text=history_text, normalized_sources=normalized_sources)
+    payload = dict(entry.get("payload") or {})
+    profile_key = str(payload.get("profile_key") or "").strip().casefold()
+    if category and profile_key == category:
+        score += 5
+    elif profile_key:
+        score += 1
+    return score
+
+
+def find_profile_memory_context(
+    question: str,
+    *,
+    history: list[dict[str, str]] | None = None,
+    sources: list[str] | None = None,
+    limit: int = 2,
+) -> str | None:
+    if not is_profile_query(question):
+        return None
+
+    approved = _active_approved_entries()
+    if not approved:
+        return None
+
+    normalized_history = normalize_history(history)
+    history_text = _normalize_text(" ".join(item.get("content", "") for item in normalized_history))
+    normalized_sources = {_normalize_text(Path(source).name) for source in (sources or []) if source}
+    normalized_question = _normalize_text(question)
+    category = _profile_query_category(question)
+
+    recent = sorted(
+        [
+            (
+                entry,
+                _score_profile_entry(
+                    entry,
+                    question=question,
+                    history_text=history_text,
+                    normalized_sources=normalized_sources,
+                    category=category,
+                ),
+            )
+            for entry in approved
+            if entry.get("memory_type") == "stable_profile_fact"
+        ],
+        key=lambda item: (item[1], str(item[0].get("updated_at") or "")),
+        reverse=True,
+    )
+    if not recent:
+        return None
+
+    refusal_markers = (
+        "[direct_answer]",
+        "根据当前知识库内容",
+        "暂时无法可靠回答",
+        "无法可靠回答",
+    )
+
+    preferred: list[dict[str, Any]] = []
+    fallback: list[dict[str, Any]] = []
+    for entry, score in recent:
+        payload = dict(entry.get("payload") or {})
+        entry_question = _normalize_text(str(payload.get("question") or ""))
+        summary = _normalize_text(str(entry.get("summary") or ""))
+        profile_key = str(payload.get("profile_key") or "").strip().casefold()
+        if not summary:
+            continue
+        if entry_question and entry_question == normalized_question:
+            continue
+        if any(marker in summary for marker in refusal_markers):
+            continue
+        if category and profile_key == category:
+            preferred.append(entry)
+            continue
+        if score > 0:
+            preferred.append(entry)
+            continue
+        fallback.append(entry)
+
+    selected = preferred[:limit]
+    if not selected:
+        selected = fallback[:limit]
+
+    deduped: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for entry in selected:
+        entry_id = str(entry.get("id") or "")
+        if not entry_id or entry_id in seen_ids:
+            continue
+        seen_ids.add(entry_id)
+        deduped.append(entry)
+        if len(deduped) >= limit:
+            break
+
+    if not deduped:
+        return None
+
+    lines = ["[Session Memory]"]
+    lines.extend(_format_memory_line(entry) for entry in deduped)
+    return "\n".join(lines)
+
+
+def find_recent_task_memory_context(
+    question: str,
+    *,
+    history: list[dict[str, str]] | None = None,
+    sources: list[str] | None = None,
+    limit: int = 2,
+) -> str | None:
+    if not is_recent_task_query(question):
+        return None
+
+    approved = _active_approved_entries()
+    if not approved:
+        return None
+
+    normalized_history = normalize_history(history)
+    history_text = _normalize_text(" ".join(item.get("content", "") for item in normalized_history))
+    normalized_sources = {_normalize_text(Path(source).name) for source in (sources or []) if source}
+
+    normalized_question = _normalize_text(question)
+
+    recent = sorted(
+        [
+            (entry, _score_relevant_entry(entry, question=question, history_text=history_text, normalized_sources=normalized_sources))
+            for entry in approved
+            if entry.get("memory_type") == "recent_task_state"
+        ],
+        key=lambda item: (item[1], str(item[0].get("updated_at") or "")),
+        reverse=True,
+    )
+    if not recent:
+        return None
+
+    refusal_markers = (
+        "[direct_answer]",
+        "根据当前知识库内容",
+        "暂时无法可靠回答",
+        "无法可靠回答",
+    )
+
+    preferred: list[dict[str, Any]] = []
+    fallback: list[dict[str, Any]] = []
+    for entry, score in recent:
+        payload = dict(entry.get("payload") or {})
+        entry_question = _normalize_text(str(payload.get("question") or ""))
+        summary = _normalize_text(str(entry.get("summary") or ""))
+        if not summary:
+            continue
+        if entry_question and entry_question == normalized_question:
+            continue
+        if any(marker in summary for marker in refusal_markers):
+            continue
+        if entry.get("source_refs"):
+            preferred.append(entry)
+            continue
+        if score > 0:
+            preferred.append(entry)
+            continue
+        fallback.append(entry)
+
+    selected = preferred[:limit]
+    if not selected:
+        selected = fallback[:limit]
+
+    deduped: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+    for entry in selected:
+        entry_id = str(entry.get("id") or "")
+        if not entry_id or entry_id in seen_ids:
+            continue
+        seen_ids.add(entry_id)
+        deduped.append(entry)
+        if len(deduped) >= limit:
+            break
+
+    if not deduped:
+        return None
+
+    lines = ["[Session Memory]"]
+    lines.extend(_format_memory_line(entry) for entry in deduped)
+    return "\n".join(lines)
+
+
 def build_memory_context(
     question: str,
     *,
@@ -1199,6 +1609,11 @@ def build_memory_context(
     approved = _active_approved_entries()
     if not approved:
         return ""
+
+    if is_profile_query(question):
+        profile_context = find_profile_memory_context(question, history=history, sources=sources, limit=min(limit, 2))
+        if profile_context:
+            return profile_context
 
     normalized_history = normalize_history(history)
     history_text = _normalize_text(" ".join(item.get("content", "") for item in normalized_history))
@@ -1304,9 +1719,30 @@ def record_completed_turn(
     answer: str,
     sources: list[str] | None = None,
     history: list[dict[str, str]] | None = None,
+    conversation_id: str | None = None,
 ) -> list[dict[str, Any]]:
+    from time import perf_counter
+
+    started_at = perf_counter()
+    from app.agent_tools import log_diagnostic_event
+
     normalized_history = normalize_history(history)
     source_refs = [source.strip() for source in (sources or []) if source and source.strip()]
+    recall_question = is_memory_recall_question(question)
+    if recall_question:
+        log_diagnostic_event(
+            "record_completed_turn_complete",
+            started_at=started_at,
+            question=question,
+            history_count=len(normalized_history),
+            source_count=len(source_refs),
+            candidate_count=0,
+            stored_entry_count=0,
+            conversation_id=_normalize_conversation_id(conversation_id) or None,
+            recall_question=True,
+        )
+        return []
+
     candidates: list[dict[str, Any]] = []
     turn_entry = _turn_log_entry(question, answer, source_refs, len(normalized_history))
     if turn_entry is not None:
@@ -1317,7 +1753,18 @@ def record_completed_turn(
     candidates.extend(_preference_entries(question))
     candidates.extend(_profile_entries(question))
     candidates.extend(_task_entries(question, answer, source_refs, len(normalized_history)))
-    return persist_memory_candidates(candidates)
+    stored_entries = persist_memory_candidates(candidates, conversation_id=conversation_id)
+    log_diagnostic_event(
+        "record_completed_turn_complete",
+        started_at=started_at,
+        question=question,
+        history_count=len(normalized_history),
+        source_count=len(source_refs),
+        candidate_count=len(candidates),
+        stored_entry_count=len(stored_entries),
+        conversation_id=_normalize_conversation_id(conversation_id) or None,
+    )
+    return stored_entries
 
 
 def summarize_memory_store() -> dict[str, Any]:

@@ -1,7 +1,8 @@
 # Project Status
 
 ## Current Goal
-- Reduce end-to-end chat latency safely, with priority on the streaming path and the most obvious serial bottlenecks.
+- Package the project for portfolio delivery around two high-signal entry points: a strong README first screen and a clickable demo website.
+- Keep the deployment path display-first: same-image packaging for OpenViking, so the demo stays easy to run and consistent.
 
 ## Current Memory Files
 - `AGENTS.md`
@@ -12,13 +13,13 @@
 - `data/loop_state.json`
 
 ## Current State
-- The repository goal has shifted from web-failure wording to performance diagnosis and safe latency reduction.
-- `suggestion.md` provides a useful hypothesis list, but it was written against an older commit and needs validation against the current code.
-- The streaming graph path now runs the preplan trio through a shared parallel helper instead of manually nesting the three nodes in sequence.
-- `/ask/stream` now emits lightweight diagnostic markers at request start and completion so real latency can be measured from logs.
-- OpenViking memory reads still depend on synchronous CLI subprocess calls and multi-query serial search, so they remain a likely latency contributor.
-- Direct web search and retrieval web steps still include multiple model and tool calls, but they should be optimized only after real timing data is collected.
-- Local compile and relevant unit tests pass, but live request verification is still pending because the local backend process is not currently running.
+- The immediate focus is presentation and reproducibility rather than product expansion.
+- The README first screen direction is already set: one-sentence value proposition, a 30-second GIF stored in the repo, and clear buttons for demo, local run, and architecture/details.
+- The demo direction is fixed: a small set of pre-recorded scenarios, with outputs captured from real local runs instead of hand-written mock answers.
+- Memory should be shown through visible behavior changes: before/after comparison, a memory-updated cue, and traceable source references.
+- The task-memory demo should emphasize task progress continuity, not a generic prompt effect.
+- OpenViking is still the main runtime dependency for memory; for Docker/demo purposes, the preferred approach is to bundle it into the same image first.
+- Work has not started on the final demo implementation yet; the current phase is still planning the exact capture and deployment path.
 
 ## Suggested Next Step
-- Start the local service, run one real slow `/ask/stream` request, and confirm the new preplan and request-level timing diagnostics before moving on to OpenViking caching.
+- Finalize the README first-screen GIF script and the demo page structure, then continue with the 4-5 fixed scenarios and the same-image Docker packaging plan.

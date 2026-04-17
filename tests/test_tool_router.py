@@ -57,6 +57,12 @@ class ToolRouterTests(unittest.TestCase):
         self.assertEqual(plan.reason, "llm:summary")
         mock_llm.assert_called_once()
 
+    def test_extract_router_hints_marks_file_summary_request(self):
+        hints = extract_router_hints("总结一下efls.txt这个文件")
+
+        self.assertTrue(hints.summary_candidate)
+        self.assertEqual(hints.target_source_hint, "efls.txt")
+
     def test_direct_answer_request_uses_llm_when_no_hard_constraint(self):
         with patch("app.tool_router.llm_tool_plan") as mock_llm:
             mock_llm.return_value = build_tool_plan(

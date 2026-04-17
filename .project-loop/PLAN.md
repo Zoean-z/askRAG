@@ -1,23 +1,34 @@
 # Working Plan
 
 ## Current Goal
-- 在不破坏现有问答行为的前提下，把主聊天链路的响应时间从 20-30 秒压到更可接受的范围，先解决最明确的串行瓶颈。
+- Turn the project into a portfolio-ready demo with two primary entry points: a strong README first screen and a clickable demo website.
+- For the demo deployment path, prefer packaging OpenViking as a same-image dependency so the showcase is easy to run and consistent across machines.
 
 ## Active Checklist
-- [x] 将性能优化目标从 `suggestion.md` 同步到项目计划
-- [ ] 给主聊天链路补分段耗时埋点，拿到真实慢请求数据
-- [x] 修复 `run_agent_graph_stream()` 的 preplan 串行执行问题
-- [ ] 评估 OpenViking 读路径缓存，优先选择短 TTL 或 session 级缓存
-- [ ] 评估 web 搜索超时与缓存控制，但在真实耗时出来前不提前重构
+- [x] Define the README first-screen structure: one-sentence value proposition, a 30-second GIF, and short entry buttons.
+- [ ] Define 4-5 fixed demo scenarios covering document summary, document Q&A, durable memory, optional web search, and knowledge-base management.
+- [ ] Define how memory is shown as a visible before/after change, with a subtle "memory updated" cue and traceable source references.
+- [ ] Define one task-memory demo path: task setup -> document summary -> follow-up question -> task progress recap.
+- [ ] Define the demo website implementation approach, prioritizing zero API cost and stable playback over live inference.
+- [ ] Define the GitHub Pages / static hosting approach so the demo has a directly clickable link.
+- [ ] Define the same-image Docker packaging approach for OpenViking, including the minimum volume list and configuration paths.
 
 ## Decisions
-- 先做低风险、高确定性的优化，再碰路由或回答策略。
-- 文档总结、本地文档检索和现有回答行为优先保持稳定。
-- 如果优化过程中遇到会改变行为边界的地方，暂停并让用户确认。
+- Default to a Chinese README as the main entry point; keep English as supporting content.
+- Prioritize "easy to understand, easy to click, easy to run" over rate limiting, account systems, or paid online APIs.
+- Build the demo from fixed scenarios and locally captured real outputs, not handwritten fake answers.
+- Mark demo outputs clearly as "for display only; captured from real local runs."
+- Showcase memory with three visible behaviors: before/after comparison, a memory-updated cue, and traceable sources.
+- Show task memory as "task progress continuation" rather than as a generic system prompt effect.
+- Keep the README first screen as a fast entry point, with deeper run/architecture details lower in the document.
+- For display-oriented Docker, prefer bundling OpenViking into the same image first; split services later only if needed.
 
 ## Blockers
-- 当前没有主链路的统一性能剖面数据，很多耗时仍是静态推断。
-- 本地 `127.0.0.1:8001` 服务当前未运行，在线埋点验收需要先启动后端。
+- The GIF recording script and final capture scope are not frozen yet.
+- The demo site hosting choice is not fully finalized yet: static preview page, GitHub Pages, or a repo subpath.
+- The exact capture/cleanup/freeze rules for "real run result snapshots" are still not finalized.
+- The same-image Docker layout still needs a clear volume list and path map.
+- We still need to decide whether the repo should keep planning files like `AGENTS.md` and `.project-loop/PLAN.md` in the published GitHub history.
 
 ## Next Step
-- 启动本地服务后，用一条真实慢请求验证 preplan 并行和 `ask_stream_*` 诊断日志是否按预期落盘。
+- Lock the README first-screen GIF script and the demo page structure, then continue with the 4-5 fixed scenarios and the deployment plan.

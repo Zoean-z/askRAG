@@ -11,7 +11,14 @@
   const workspaceModalTitle = document.querySelector("#workspaceModalTitle");
   const settingsCopy = document.querySelector("#settingsCopy");
   const settingsLanguageLabel = document.querySelector("#settingsLanguageLabel");
+  const settingsThemeLabel = document.querySelector("#settingsThemeLabel");
   const settingsModelLabel = document.querySelector("#settingsModelLabel");
+  const localeSwitch = document.querySelector("#localeSwitch");
+  const themeSwitch = document.querySelector("#themeSwitch");
+  const localeZhButton = document.querySelector("#localeZh");
+  const localeEnButton = document.querySelector("#localeEn");
+  const themeDarkButton = document.querySelector("#themeDark");
+  const themeLightButton = document.querySelector("#themeLight");
   const supportEyebrow = document.querySelector("#supportEyebrow");
   const supportTitle = document.querySelector("#supportTitle");
   const supportCopy = document.querySelector("#supportCopy");
@@ -28,7 +35,11 @@
       workspaceModalTitle: "\u5de5\u4f5c\u533a\u8bbe\u7f6e",
       settingsCopy: "\u8c03\u6574\u754c\u9762\u8bed\u8a00\uff0c\u5e76\u67e5\u770b\u5f53\u524d\u8fd0\u884c\u6a21\u578b\u3002",
       settingsLanguageLabel: "\u8bed\u8a00",
+      settingsThemeLabel: "\u4e3b\u9898",
       settingsModelLabel: "\u5f53\u524d\u6a21\u578b",
+      themeDark: "\u6df1\u8272",
+      themeLight: "\u6d45\u8272",
+      themeSwitchAria: "\u4e3b\u9898\u5207\u6362",
       currentModelHint: (webModel) => `\u8054\u7f51\u641c\u7d22\u6a21\u578b\uff1a${webModel || "\u672a\u914d\u7f6e"}`,
       currentModelLoading: "\u8bfb\u53d6\u4e2d...",
       currentModelFallback: "\u672c\u5730\u8fd0\u884c\u65f6",
@@ -45,7 +56,11 @@
       workspaceModalTitle: "Workspace settings",
       settingsCopy: "Adjust the interface language and inspect the active runtime model.",
       settingsLanguageLabel: "Language",
+      settingsThemeLabel: "Theme",
       settingsModelLabel: "Current model",
+      themeDark: "Dark",
+      themeLight: "Light",
+      themeSwitchAria: "Theme switcher",
       currentModelHint: (webModel) => `Web search model: ${webModel || "not configured"}`,
       currentModelLoading: "Loading...",
       currentModelFallback: "Local runtime",
@@ -61,10 +76,28 @@
 
   const state = {
     locale: document.documentElement.lang.startsWith("zh") ? "zh" : "en",
+    theme: readStoredTheme() || "dark",
     chatModel: "",
     webSearchModel: "",
     activePanel: "settings",
   };
+
+  function readStoredTheme() {
+    try {
+      const value = window.localStorage.getItem("askrag.theme");
+      return value === "light" || value === "dark" ? value : "";
+    } catch (error) {
+      return "";
+    }
+  }
+
+  function writeStoredTheme(theme) {
+    try {
+      window.localStorage.setItem("askrag.theme", theme);
+    } catch (error) {
+      return;
+    }
+  }
 
   function text() {
     return translations[state.locale] || translations.en;
@@ -84,6 +117,7 @@
     if (workspaceModalTitle) workspaceModalTitle.textContent = copy.workspaceModalTitle;
     if (settingsCopy) settingsCopy.textContent = copy.settingsCopy;
     if (settingsLanguageLabel) settingsLanguageLabel.textContent = copy.settingsLanguageLabel;
+    if (settingsThemeLabel) settingsThemeLabel.textContent = copy.settingsThemeLabel;
     if (settingsModelLabel) settingsModelLabel.textContent = copy.settingsModelLabel;
     if (supportEyebrow) supportEyebrow.textContent = copy.supportEyebrow;
     if (supportTitle) supportTitle.textContent = copy.supportTitle;
@@ -99,6 +133,27 @@
           ? "FastAPI\u3001Python\u3001Chroma\u3001OpenAI\u3001HTML/CSS/JS"
           : "FastAPI, Python, Chroma, OpenAI, HTML/CSS/JS";
     }
+    if (themeSwitch) {
+      themeSwitch.setAttribute("aria-label", copy.themeSwitchAria);
+    }
+    if (localeZhButton) {
+      localeZhButton.classList.toggle("is-active", state.locale === "zh");
+      localeZhButton.setAttribute("aria-pressed", state.locale === "zh" ? "true" : "false");
+    }
+    if (localeEnButton) {
+      localeEnButton.classList.toggle("is-active", state.locale === "en");
+      localeEnButton.setAttribute("aria-pressed", state.locale === "en" ? "true" : "false");
+    }
+    if (themeDarkButton) {
+      themeDarkButton.textContent = copy.themeDark;
+      themeDarkButton.classList.toggle("is-active", state.theme === "dark");
+      themeDarkButton.setAttribute("aria-pressed", state.theme === "dark" ? "true" : "false");
+    }
+    if (themeLightButton) {
+      themeLightButton.textContent = copy.themeLight;
+      themeLightButton.classList.toggle("is-active", state.theme === "light");
+      themeLightButton.setAttribute("aria-pressed", state.theme === "light" ? "true" : "false");
+    }
     if (closeButton) {
       closeButton.setAttribute("aria-label", state.locale === "zh" ? "\u5173\u95ed" : "Close");
     }
@@ -112,6 +167,20 @@
     if (currentModelHint) {
       currentModelHint.textContent = copy.currentModelHint(state.webSearchModel);
     }
+  }
+
+  function applyTheme() {
+    const theme = state.theme === "light" ? "light" : "dark";
+    state.theme = theme;
+    document.body.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme;
+  }
+
+  function setTheme(theme) {
+    state.theme = theme === "light" ? "light" : "dark";
+    applyTheme();
+    writeStoredTheme(state.theme);
+    updatePanelCopy();
   }
 
   function applyPanelVisibility() {
@@ -195,6 +264,11 @@
 
   closeButton?.addEventListener("click", closePanel);
 
+  localeZhButton?.addEventListener("click", () => setLocale("zh"));
+  localeEnButton?.addEventListener("click", () => setLocale("en"));
+  themeDarkButton?.addEventListener("click", () => setTheme("dark"));
+  themeLightButton?.addEventListener("click", () => setTheme("light"));
+
   overlay?.addEventListener("click", (event) => {
     if (event.target === overlay) {
       closePanel();
@@ -207,6 +281,7 @@
     }
   });
 
+  applyTheme();
   updatePanelCopy();
   updateModelCopy();
   setHidden(overlay, true);
@@ -218,5 +293,6 @@
     openSettings: () => openPanel("settings"),
     openSupport: () => openPanel("support"),
     close: closePanel,
+    setTheme,
   };
 })();

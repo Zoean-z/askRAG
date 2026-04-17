@@ -12,6 +12,7 @@ from langgraph.types import Send
 
 from app.agent_tools import build_source_preview, log_diagnostic_event
 from app.rag import is_summary_flow_request
+from app.session_memory import is_recent_task_query
 from app.tool_router import (
     ToolPlan,
     build_tool_plan,
@@ -246,9 +247,9 @@ def _load_response_constraints_parallel_node(state: dict[str, Any]) -> dict[str,
 def _run_preplan_parallel(state: dict[str, Any]) -> dict[str, Any]:
     started_at = perf_counter()
     node_specs = (
-        ("local_doc_probe", _local_doc_probe_node),
-        ("load_long_term_context", _load_long_term_context_node),
-        ("load_response_constraints", _load_response_constraints_node),
+        ("local_doc_probe", _local_doc_probe_parallel_node),
+        ("load_long_term_context", _load_long_term_context_parallel_node),
+        ("load_response_constraints", _load_response_constraints_parallel_node),
     )
     merged_state = dict(state)
     timings_ms: dict[str, float] = {}
@@ -354,6 +355,15 @@ def _plan_request(state: dict[str, Any]) -> dict[str, Any]:
             use_history=router_hints.use_history,
             target_source_hint=router_hints.target_source_hint,
             intent="doc_summary",
+        )
+    elif is_recent_task_query(question):
+        tool_plan = build_tool_plan(
+            "direct_answer",
+            reason="graph_recent_task_memory_direct_answer",
+            confidence=0.92,
+            fallback_tool=None,
+            use_history=router_hints.use_history,
+            intent="chat_followup",
         )
     elif state.get("memory_context") and _looks_like_profile_memory_query_stable(question):
         tool_plan = build_tool_plan(
@@ -920,9 +930,11 @@ def _stream_with_turn_memory(
     question: str,
     history: list[dict[str, str]] | None,
     event_stream: Iterator[tuple[str, dict]],
+    conversation_id: str | None = None,
 ) -> Iterator[tuple[str, dict]]:
     from app.agent_tools import persist_turn_memory_result
 
+    wrapper_started_at = perf_counter()
     collected_answer: list[str] = []
     collected_sources: list[str] = []
     collected_trace: dict[str, Any] = {}
@@ -938,15 +950,33 @@ def _stream_with_turn_memory(
             collected_trace = dict(payload or {})
 
         if event_name == "done":
+            memory_started_at = perf_counter()
             persistence = persist_turn_memory_result(
                 question=question,
                 answer="".join(collected_answer),
                 sources=collected_sources,
                 history=history,
                 trace=collected_trace,
+                conversation_id=conversation_id,
+            )
+            log_diagnostic_event(
+                "stream_turn_memory_wrapper_complete",
+                started_at=memory_started_at,
+                question=question,
+                answer_chars=len("".join(collected_answer)),
+                source_count=len(collected_sources),
+                notice_count=len(persistence.memory_notices),
             )
             if persistence.memory_notices:
                 yield "memory_notices", {"items": persistence.memory_notices}
+            log_diagnostic_event(
+                "stream_event_pipeline_complete",
+                started_at=wrapper_started_at,
+                question=question,
+                answer_chars=len("".join(collected_answer)),
+                source_count=len(collected_sources),
+                trace_mode=collected_trace.get("mode"),
+            )
             yield "done", payload
             return
 
@@ -1018,6 +1048,7 @@ def run_agent_graph_stream(
     history: list[dict[str, str]] | None,
     k: int = 3,
     allow_web_search: bool = True,
+    conversation_id: str | None = None,
 ):
     initial_state = _init_request(
         {
@@ -1042,6 +1073,7 @@ def run_agent_graph_stream(
         yield from _stream_with_turn_memory(
             question=question,
             history=state.get("history"),
+            conversation_id=conversation_id,
             event_stream=stream_direct_answer_tool(
             question,
             history=state.get("reference_history") or state.get("history"),
@@ -1068,6 +1100,7 @@ def run_agent_graph_stream(
             yield from _stream_with_turn_memory(
                 question=question,
                 history=state.get("history"),
+                conversation_id=conversation_id,
                 event_stream=stream_read_summary(
                     question,
                     history=state.get("reference_history") or state.get("history"),
@@ -1093,6 +1126,7 @@ def run_agent_graph_stream(
         yield from _stream_with_turn_memory(
             question=question,
             history=state.get("history"),
+            conversation_id=conversation_id,
             event_stream=stream_compose_summary_with_web_result(
                 question,
                 summary_result,
@@ -1109,6 +1143,7 @@ def run_agent_graph_stream(
         yield from _stream_with_turn_memory(
             question=question,
             history=state.get("history"),
+            conversation_id=conversation_id,
             event_stream=stream_web_search_tool(
             question,
             tool_plan,
@@ -1191,6 +1226,7 @@ def run_agent_graph_stream(
         yield from _stream_with_turn_memory(
             question=question,
             history=state.get("history"),
+            conversation_id=conversation_id,
             event_stream=stream_retrieval_finalize_result(workflow_state),
         )
         return

@@ -1136,6 +1136,9 @@ def stream_local_summary(
     memory_context: str | None = None,
     response_constraints: dict[str, object] | None = None,
 ) -> Iterator[tuple[str, dict]]:
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     reference_history = reference_history if reference_history is not None else build_reference_history(question, history)
     document = choose_summary_document(
         question,
@@ -1153,6 +1156,31 @@ def stream_local_summary(
         child_results=child_results,
         memory_context=resolved_memory_context,
     )
+    summary_context = context_plan.context or document.page_content[:LONG_SUMMARY_DIRECT_THRESHOLD]
+    summary_messages = build_summary_messages(
+        question,
+        source,
+        summary_context,
+        response_constraints=resolved_response_constraints,
+    )
+    log_diagnostic_event(
+        "summary_prompt_ready",
+        started_at=started_at,
+        question=question,
+        source=source,
+        mode="local_summary_stream",
+        history_count=len(reference_history),
+        context_chars=len(context_plan.context),
+        fallback_content_chars=len(document.page_content[:LONG_SUMMARY_DIRECT_THRESHOLD]),
+        prompt_chars=sum(len(str(item.get("content", ""))) for item in summary_messages),
+        message_count=len(summary_messages),
+        system_chars=len(str(summary_messages[0].get("content", ""))) if summary_messages else 0,
+        user_chars=len(str(summary_messages[1].get("content", ""))) if len(summary_messages) > 1 else 0,
+        deep_read=bool(context_plan.debug.get("deep_read_enabled")),
+        memory_context_chars=len(resolved_memory_context or ""),
+        source_hit_count=len(context_plan.source_hits),
+        layer_count=len(context_plan.layers_used),
+    )
     yield "sources", {"sources": [source]}
     yield "progress", {"stage": "summary_start", "source": source}
     yield "trace", context_plan.to_dict()
@@ -1166,16 +1194,12 @@ def stream_local_summary(
     stream = client.chat.completions.create(
         model=get_chat_model(),
         temperature=0.2,
-        messages=build_summary_messages(
-            question,
-            source,
-            context_plan.context or document.page_content[:LONG_SUMMARY_DIRECT_THRESHOLD],
-            response_constraints=resolved_response_constraints,
-        ),
+        messages=summary_messages,
         stream=True,
     )
 
     has_text = False
+    first_token_logged = False
     for chunk in stream:
         if not chunk.choices:
             continue
@@ -1186,11 +1210,39 @@ def stream_local_summary(
             continue
 
         has_text = True
+        if not first_token_logged:
+            log_diagnostic_event(
+                "summary_stream_first_token",
+                started_at=started_at,
+                question=question,
+                source=source,
+                mode="local_summary_stream",
+                history_count=len(reference_history),
+            )
+            first_token_logged = True
         yield "delta", {"text": text}
 
     if not has_text:
+        log_diagnostic_event(
+            "summary_stream_first_token",
+            started_at=started_at,
+            question=question,
+            source=source,
+            mode="local_summary_stream_empty",
+            history_count=len(reference_history),
+            emitted_text=False,
+        )
         yield "delta", {"text": EMPTY_ANSWER_MESSAGE}
 
+    log_diagnostic_event(
+        "summary_stream_complete",
+        started_at=started_at,
+        question=question,
+        source=source,
+        mode="local_summary_stream",
+        history_count=len(reference_history),
+        emitted_text=has_text,
+    )
     yield "done", {}
 
 
@@ -1426,6 +1478,7 @@ def stream_answer_question(
     history: list[dict[str, str]] | None = None,
     k: int = 3,
     allow_web_search: bool = True,
+    conversation_id: str | None = None,
 ) -> Iterator[tuple[str, dict]]:
     reference_history = build_reference_history(question, history)
     _log_pre_router_diagnostic(question, history=reference_history)
@@ -1436,4 +1489,5 @@ def stream_answer_question(
         history=reference_history,
         k=k,
         allow_web_search=allow_web_search,
+        conversation_id=conversation_id,
     )

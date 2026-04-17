@@ -87,6 +87,39 @@ class AgentGraphTests(unittest.TestCase):
         self.assertIs(result, expected)
         summary_mock.assert_called_once_with("summarize file", history=[], require_strong_parent_match=True)
 
+    def test_run_agent_graph_routes_recent_task_query_to_direct_answer(self):
+        expected = AnswerRunResult(answer="task", sources=[], trace={"mode": "direct_answer"})
+        task_context = "[Session Memory]\n- [L1] recent_task_state: We are focusing on ralph-superpowers-integration.md."
+
+        with (
+            patch("app.agent_graph.is_recent_task_query", return_value=True),
+            patch("app.agent_graph.extract_router_hints", return_value=_router_hints()),
+            patch("app.agent_tools.probe_local_docs", return_value=_probe()),
+            patch("app.agent_tools.load_long_term_context", return_value=SimpleNamespace(reference_history=[], memory_context=task_context)),
+            patch("app.agent_tools.load_response_constraints", return_value={}),
+            patch("app.agent_tools.answer_directly_tool", return_value=expected) as direct_mock,
+        ):
+            result = run_agent_graph_detailed("任务是什么", history=[], k=3)
+
+        self.assertIs(result, expected)
+        direct_mock.assert_called_once_with("任务是什么", history=[], memory_context=task_context)
+
+    def test_run_preplan_parallel_preserves_memory_context(self):
+        from app.agent_graph import _init_request, _run_preplan_parallel
+
+        initial = _init_request(
+            {
+                "question": "我住在哪里",
+                "history": [],
+                "k": 3,
+                "allow_web_search": False,
+            }
+        )
+
+        result = _run_preplan_parallel(initial)
+
+        self.assertIn("Memory", result.get("memory_context", ""))
+
     def test_run_agent_graph_routes_summary_plus_web_strategy_through_tool_layer(self):
         summary_result = AnswerRunResult(
             answer="local summary",

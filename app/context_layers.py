@@ -278,5 +278,14 @@ def build_summary_context_plan(
         candidate_sources=[item["source"] for item in source_hits],
         drilldown_path=drilldown_path,
         source_hits=source_hits,
-        debug={"deep_read_enabled": deep_read, "memory_context_used": bool(memory_context.strip())},
+        debug={
+            "deep_read_enabled": deep_read,
+            "memory_context_used": bool(memory_context.strip()),
+            "memory_context_chars": len(memory_context.strip()),
+            "context_chars": len("\n\n".join(section for section in sections if section.strip())),
+            "source_hit_count": len(source_hits),
+            "layer_count": len(layers_used),
+            "section_count": len([section for section in sections if section.strip()]),
+            "l2_chunk_count": len(l2_results) if deep_read else 0,
+        },
     )

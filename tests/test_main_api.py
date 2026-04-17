@@ -6,6 +6,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app import session_memory
 
 
 class MainApiTests(unittest.TestCase):
@@ -248,6 +249,47 @@ class MainApiTests(unittest.TestCase):
             listed_again = client.get("/conversations")
             self.assertEqual(listed_again.status_code, 200)
             self.assertEqual(listed_again.json()["conversations"], [])
+
+    def test_conversation_delete_cascades_memory_entries_for_that_conversation(self):
+        memory_docs_dir = Path(self.temp_dir.name) / "memory_docs"
+        with patch("app.conversations.CONVERSATION_STORE_PATH", self.conversation_path), patch(
+            "app.session_memory.MEMORY_STORE_PATH", self.memory_path
+        ), patch(
+            "app.session_memory.LEGACY_MEMORY_STORE_PATH", self.memory_path.with_name("legacy.json")
+        ), patch(
+            "app.session_memory.MEMORY_DOCS_DIR", memory_docs_dir
+        ), patch(
+            "app.session_memory._sync_entry_to_openviking", lambda entry: entry.update({"openviking_sync_status": "test_synced"})
+        ):
+            client = TestClient(app)
+            created = client.post("/conversations", json={"title": "Memory cleanup"})
+            conversation_id = created.json()["conversation"]["id"]
+
+            session_memory.persist_memory_candidates(
+                session_memory.extract_memory_candidates(
+                    question="Remember I prefer Chinese responses.",
+                    answer="",
+                    sources=[],
+                    history=[],
+                ),
+                conversation_id=conversation_id,
+            )
+            session_memory.persist_memory_candidates(
+                session_memory.extract_memory_candidates(
+                    question="Remember answers under 100 chars.",
+                    answer="",
+                    sources=[],
+                    history=[],
+                ),
+                conversation_id="other-conversation",
+            )
+
+            deleted = client.delete(f"/conversations/{conversation_id}")
+            self.assertEqual(deleted.status_code, 200)
+
+            remaining = session_memory.list_memory_entries(include_pending=True, include_rolled_back=True, include_superseded=True)
+            self.assertTrue(all(entry.get("conversation_id") != conversation_id for entry in remaining))
+            self.assertTrue(any(entry.get("conversation_id") == "other-conversation" for entry in remaining))
 
     def test_memory_update_endpoint_edits_existing_entry(self):
         with patch("app.session_memory.MEMORY_STORE_PATH", self.memory_path), patch(

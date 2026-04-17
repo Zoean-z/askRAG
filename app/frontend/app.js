@@ -15,6 +15,11 @@ const MAX_HISTORY_MESSAGES = 8;
 const ACTIVE_CONVERSATION_STORAGE_KEY = "askrag.activeConversationId";
 const LOCALE_STORAGE_KEY = "askrag.locale";
 const WEB_SEARCH_STORAGE_KEY = "askrag.useWebSearch";
+const LONG_TERM_MEMORY_TYPES = new Set([
+  "pinned_preference",
+  "stable_profile_fact",
+  "approved_long_term_fact",
+]);
 
 const translations = {
   zh: {
@@ -54,6 +59,7 @@ const translations = {
         conversationCreating: "\u6b63\u5728\u521b\u5efa\u65b0\u5bf9\u8bdd...",
         conversationOpening: "\u6b63\u5728\u6253\u5f00\u5bf9\u8bdd...",
         conversationDeleting: "\u6b63\u5728\u5220\u9664\u5bf9\u8bdd...",
+        conversationDeletedToast: (name) => `\u5df2\u5220\u9664\u201c${name}\u201d\u53ca\u76f8\u5173\u8bb0\u5fc6`,
         conversationFallbackTitle: "\u65b0\u5bf9\u8bdd",
         deleteConversation: "\u5220\u9664",
         confirmDeleteConversation: (name) => `\u786e\u8ba4\u5220\u9664 ${name} \u5417\uff1f\u8be5\u5bf9\u8bdd\u5c06\u4ece\u5386\u53f2\u5217\u8868\u4e2d\u79fb\u9664\u3002`,
@@ -65,18 +71,30 @@ const translations = {
         promptTitle: "\u8f93\u5165\u533a",
         promptText: "\u4e00\u6b21\u8f93\u5165\u4e00\u4e2a\u95ee\u9898\uff0c\u56de\u7b54\u4f1a\u6301\u7eed\u51fa\u73b0\u5728\u4e2d\u95f4\u7684\u6d88\u606f\u6d41\u91cc\u3002",
         questionLabel: "\u95ee\u9898",
-        placeholder: "Chroma \u662f\u7528\u6765\u505a\u4ec0\u4e48\u7684\uff1f",
+        placeholder: "\u641c\u7d22\u5bf9\u8bdd\u3001\u77e5\u8bc6\u5e93\u548c\u8bb0\u5fc6...",
         submit: "\u53d1\u9001",
         webSearchLabel: "\u8054\u7f51\u641c\u7d22",
         webSearchOn: "\u5f00",
         webSearchOff: "\u5173",
         webSearchAriaOn: "\u5173\u95ed\u8054\u7f51\u641c\u7d22",
         webSearchAriaOff: "\u5f00\u542f\u8054\u7f51\u641c\u7d22",
+        searchPanelEyebrow: "\u641c\u7d22",
+        searchPanelTitle: "\u5339\u914d\u7ed3\u679c",
+        searchPanelSummary: (count) => `\u627e\u5230 ${count} \u4e2a\u5339\u914d\u9879`,
+        searchPanelEmpty: "\u8f93\u5165\u5173\u952e\u8bcd\uff0c\u5728\u5bf9\u8bdd\u3001\u77e5\u8bc6\u5e93\u548c\u8bb0\u5fc6\u4e2d\u5bfb\u627e\u76f8\u540c\u5185\u5bb9\u3002",
+        searchLoading: "\u6b63\u5728\u52a0\u8f7d\u5bf9\u8bdd\u3001\u77e5\u8bc6\u5e93\u548c\u8bb0\u5fc6...",
+        searchSectionCurrent: "\u5f53\u524d\u5bf9\u8bdd",
+        searchSectionConversations: "\u5bf9\u8bdd\u5386\u53f2",
+        searchSectionDocuments: "\u77e5\u8bc6\u5e93",
+        searchSectionMemories: "\u8bb0\u5fc6",
+        searchNoMatches: "\u672a\u627e\u5230\u5339\u914d\u5185\u5bb9\u3002",
         notesEyebrow: "\u63d0\u793a",
         notesTitle: "\u63d0\u793a",
         noteOne: "\u53ef\u4ee5\u76f4\u63a5\u8ffd\u95ee\u4e0a\u4e00\u8f6e\u63d0\u5230\u7684\u5bf9\u8c61\u6216\u65b9\u6cd5\u3002",
         noteTwo: "\u5982\u679c\u9700\u8981\u8865\u5145\u8d44\u6599\uff0c\u53ef\u4ee5\u5230\u77e5\u8bc6\u5e93\u9875\u9762\u4e0a\u4f20\u6587\u4ef6\u3002",
         noteThree: "\u56de\u7b54\u4e0b\u65b9\u4f1a\u663e\u793a\u4e3b\u6765\u6e90\u3002",
+        memoryNoticeUpdated: "已更新记忆",
+        memoryNoticeUsed: "\u5df2\u8bfb\u53d6\u8bb0\u5fc6",
         routingEyebrow: "\u6765\u6e90",
         routingTitle: "\u4e3b\u6765\u6e90",
         routingText: "\u95ee\u9898\u8d8a\u805a\u7126\uff0c\u6765\u6e90\u94fe\u8def\u5c31\u8d8a\u6e05\u6670\u3002",
@@ -182,6 +200,7 @@ const translations = {
     },
     library: {
       empty: "\u5f53\u524d\u8fd8\u6ca1\u6709\u53ef\u5c55\u793a\u7684\u6587\u6863\u3002",
+      emptyFiltered: "\u6ca1\u6709\u6587\u6863\u5339\u914d\u5f53\u524d\u641c\u7d22\u3002",
       loading: "\u6b63\u5728\u8bfb\u53d6\u6587\u4ef6\u5217\u8868...",
       failed: "\u8bfb\u53d6\u6587\u4ef6\u5217\u8868\u5931\u8d25\u3002",
       uploaded: "\u6dfb\u52a0\u65f6\u95f4",
@@ -229,6 +248,7 @@ const translations = {
         conversationCreating: "Creating a new chat...",
         conversationOpening: "Opening conversation...",
         conversationDeleting: "Deleting conversation...",
+        conversationDeletedToast: (name) => `Deleted "${name}" and related memories`,
         conversationFallbackTitle: "New chat",
         deleteConversation: "Delete",
         confirmDeleteConversation: (name) => `Delete ${name}? This will remove the conversation from the history list.`,
@@ -240,18 +260,30 @@ const translations = {
         promptTitle: "Composer",
         promptText: "Ask one question at a time. The answer streams into the center transcript.",
         questionLabel: "Question",
-        placeholder: "What is Chroma used for?",
+        placeholder: "Search conversations, files, and memories...",
         submit: "Send",
         webSearchLabel: "Web search",
         webSearchOn: "On",
         webSearchOff: "Off",
         webSearchAriaOn: "Disable web search",
         webSearchAriaOff: "Enable web search",
+        searchPanelEyebrow: "Search",
+        searchPanelTitle: "Matching results",
+        searchPanelSummary: (count) => `Found ${count} matching items`,
+        searchPanelEmpty: "Type a keyword to find matching content in conversations, the knowledge base, and memory.",
+        searchLoading: "Loading conversations, documents, and memory...",
+        searchSectionCurrent: "Current conversation",
+        searchSectionConversations: "Conversation history",
+        searchSectionDocuments: "Knowledge base",
+        searchSectionMemories: "Memory",
+        searchNoMatches: "No matching content found.",
         notesEyebrow: "Notes",
         notesTitle: "Tips",
         noteOne: "You can ask follow-up questions about the previous turn.",
         noteTwo: "Use the library page when you need to add new files.",
         noteThree: "The primary source appears below each answer.",
+        memoryNoticeUpdated: "Memory updated",
+        memoryNoticeUsed: "Memory used",
         routingEyebrow: "Source trail",
         routingTitle: "Primary source",
         routingText: "Keep the topic focused so the evidence path stays clear.",
@@ -357,6 +389,7 @@ const translations = {
     },
     library: {
       empty: "No documents are available yet.",
+      emptyFiltered: "No documents match the current search.",
       loading: "Loading file list...",
       failed: "Failed to load file list.",
       uploaded: "Added",
@@ -371,23 +404,32 @@ const translations = {
 
 const pageConfig = {
   chat: {
-    titleElement: document.querySelector("h1"),
-    conversationsEyebrow: document.querySelector("#conversationsEyebrow"),
-    conversationsTitle: document.querySelector("#conversationsTitle"),
-    newConversationButton: document.querySelector("#newConversationButton"),
-    newConversationButtonLabel: document.querySelector("#newConversationButtonLabel"),
-    conversationRailStatus: document.querySelector("#conversationRailStatus"),
-    conversationList: document.querySelector("#conversationList"),
-    statusPill: document.querySelector("#chatStatusPill"),
-    scopePill: document.querySelector("#chatScopePill"),
-    eyebrowText: document.querySelector("#eyebrowText"),
-    heroText: document.querySelector("#heroText"),
-    stageEyebrow: document.querySelector("#stageEyebrow"),
-    stageTitle: document.querySelector("#stageTitle"),
-    stageLead: document.querySelector("#stageLead"),
-    transcriptPanel: document.querySelector("#transcriptPanel"),
-    introMessage: document.querySelector("#introMessage"),
-    promptTitle: document.querySelector("#promptTitle"),
+      titleElement: document.querySelector("h1"),
+      conversationsEyebrow: document.querySelector("#conversationsEyebrow"),
+      conversationsTitle: document.querySelector("#conversationsTitle"),
+      newConversationButton: document.querySelector("#newConversationButton"),
+      newConversationButtonLabel: document.querySelector("#newConversationButtonLabel"),
+      conversationRailStatus: document.querySelector("#conversationRailStatus"),
+      conversationList: document.querySelector("#conversationList"),
+      statusPill: document.querySelector("#chatStatusPill"),
+      scopePill: document.querySelector("#chatScopePill"),
+      eyebrowText: document.querySelector("#eyebrowText"),
+      heroText: document.querySelector("#heroText"),
+      stageEyebrow: document.querySelector("#stageEyebrow"),
+      stageTitle: document.querySelector("#stageTitle"),
+      stageLead: document.querySelector("#stageLead"),
+      searchInput: document.querySelector("#chatSearchInput"),
+      searchPanel: document.querySelector("#pageSearchPanel"),
+      searchEyebrow: document.querySelector("#pageSearchEyebrow"),
+      searchTitle: document.querySelector("#pageSearchTitle"),
+      searchSummary: document.querySelector("#pageSearchSummary"),
+      searchResults: document.querySelector("#pageSearchResults"),
+      toastHost: document.querySelector("#toastHost"),
+      transcriptPanel: document.querySelector("#transcriptPanel"),
+      introMessage: document.querySelector("#introMessage"),
+      scrollArea: document.querySelector(".stitch-scroll-area"),
+      scrollToBottomButton: document.querySelector("#scrollToBottomButton"),
+      promptTitle: document.querySelector("#promptTitle"),
     promptText: document.querySelector("#promptText"),
     questionLabel: document.querySelector("#questionLabel"),
     submitButtonLabel: document.querySelector("#submitButtonLabel"),
@@ -461,18 +503,23 @@ const pageConfig = {
     uploadStatus: document.querySelector("#uploadStatus"),
     documentList: document.querySelector("#documentList"),
   },
-};
+  };
 
-let currentLocale = "zh";
-let currentStatusKey = "ready";
-let currentUploadStatus = { key: "idle", value: "" };
-let documentCache = [];
-let conversationHistory = [];
-let conversationListCache = [];
-let activeConversationId = "";
-let chatBusy = false;
-let activeDeleteSource = "";
-let useWebSearch = readStoredWebSearch();
+  let currentLocale = "zh";
+  let currentStatusKey = "ready";
+  let currentUploadStatus = { key: "idle", value: "" };
+  let documentCache = [];
+  let memoryCache = [];
+  let conversationHistory = [];
+  let conversationListCache = [];
+  let activeConversationId = "";
+  let chatBusy = false;
+  let activeDeleteSource = "";
+  let useWebSearch = readStoredWebSearch();
+let searchIndexReady = false;
+let searchIndexPromise = null;
+let currentSearchQuery = "";
+let toastTimer = null;
 
 function t() {
   return translations[currentLocale];
@@ -546,6 +593,40 @@ function setConversationRailStatus(message) {
   if (railStatus) {
     railStatus.textContent = message || "";
   }
+}
+
+function showToast(message, tone = "info", duration = 2800) {
+  const host = pageConfig.chat.toastHost;
+  const text = String(message || "").trim();
+  if (!host || !text) {
+    return;
+  }
+  host.innerHTML = "";
+  const toast = document.createElement("div");
+  toast.className = `toast is-${tone}`;
+  toast.setAttribute("role", "status");
+  toast.setAttribute("aria-live", "polite");
+  toast.innerHTML = `
+    <span class="material-symbols-outlined toast-icon" aria-hidden="true">notifications</span>
+    <span class="toast-text"></span>
+  `;
+  const textEl = toast.querySelector(".toast-text");
+  if (textEl) {
+    textEl.textContent = text;
+  }
+  host.appendChild(toast);
+  window.clearTimeout(toastTimer);
+  requestAnimationFrame(() => {
+    toast.classList.add("is-visible");
+  });
+  toastTimer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+    window.setTimeout(() => {
+      if (toast.isConnected) {
+        toast.remove();
+      }
+    }, 180);
+  }, duration);
 }
 
 function updateNavAndBrand() {
@@ -623,6 +704,26 @@ function renderSourceLabels() {
   });
 }
 
+function getFilteredDocuments(items = []) {
+  const query = normalizeSearchText(pageConfig.library.searchInput?.value || "");
+  if (!query) {
+    return items;
+  }
+  const tokens = buildSearchTokens(query);
+  return items.filter((document) => {
+    const haystack = [
+      document.file_name,
+      document.source,
+      document.chunk_count,
+      document.uploaded_at,
+      document.md5,
+    ]
+      .map((value) => String(value || ""))
+      .join(" ");
+    return matchesSearchTokens(haystack, tokens);
+  });
+}
+
 function setStatus(statusKey) {
   currentStatusKey = statusKey;
   const statusText = pageConfig.chat.statusText;
@@ -693,6 +794,63 @@ function setMessageToolStatus(article, message, tone = "pending") {
   statusEl.className = `message-tool-status is-${tone}`;
   statusEl.textContent = message;
   article.dataset.toolStatusTone = tone;
+}
+
+function getMessageMemoryNoticeElement(article) {
+  let noticeEl = article.querySelector(".message-memory-note");
+  if (!noticeEl) {
+    noticeEl = document.createElement("div");
+    noticeEl.className = "message-memory-note";
+    noticeEl.hidden = true;
+    noticeEl.innerHTML = `
+      <span class="material-symbols-outlined message-memory-note-icon" aria-hidden="true">edit_note</span>
+      <span class="message-memory-note-text"></span>
+    `;
+    const bodyEl = article.querySelector(".message-body");
+    if (bodyEl && bodyEl.parentNode === article) {
+      article.insertBefore(noticeEl, bodyEl);
+    } else {
+      article.appendChild(noticeEl);
+    }
+  }
+  return noticeEl;
+}
+
+function getMemoryNoticeText(notices = []) {
+  const items = Array.isArray(notices) ? notices.filter((item) => item && typeof item === "object") : [];
+  if (!items.length) {
+    return "";
+  }
+  return items.some(
+    (item) =>
+      String(item.kind || "") === "remembered" &&
+      LONG_TERM_MEMORY_TYPES.has(String(item.memory_type || "")) &&
+      String(item.status || "") === "approved",
+  )
+    ? t().pages.chat.memoryNoticeUpdated
+    : "";
+}
+
+function setMessageMemoryNotice(article, notices = []) {
+  if (!article || String(article.dataset.roleKey || "assistant") !== "assistant") {
+    return;
+  }
+  const noticeEl = getMessageMemoryNoticeElement(article);
+  const noticeText = getMemoryNoticeText(notices);
+  const textEl = noticeEl.querySelector(".message-memory-note-text");
+  if (!noticeText) {
+    noticeEl.hidden = true;
+    if (textEl) {
+      textEl.textContent = "";
+    }
+    delete article.dataset.memoryNotice;
+    return;
+  }
+  noticeEl.hidden = false;
+  if (textEl) {
+    textEl.textContent = noticeText;
+  }
+  article.dataset.memoryNotice = noticeText;
 }
 
 function formatUploadedAt(value) {
@@ -799,13 +957,35 @@ function getConversationMeta(conversation) {
   return t().pages.chat.conversationMeta(count, timeText);
 }
 
-function scrollMessages() {
-  if (pageConfig.chat.messageList) {
-    pageConfig.chat.messageList.scrollTo({
-      top: pageConfig.chat.messageList.scrollHeight,
-      behavior: "smooth",
-    });
+function getChatScrollArea() {
+  return pageConfig.chat.scrollArea || pageConfig.chat.messageList?.closest(".stitch-scroll-area") || null;
+}
+
+function isChatAtBottom(scrollArea = getChatScrollArea()) {
+  if (!scrollArea) {
+    return true;
   }
+  return scrollArea.scrollHeight - scrollArea.scrollTop - scrollArea.clientHeight < 48;
+}
+
+function updateScrollToBottomButton() {
+  const button = pageConfig.chat.scrollToBottomButton;
+  if (!button) {
+    return;
+  }
+  button.hidden = isChatAtBottom();
+}
+
+function scrollMessages({ behavior = "smooth" } = {}) {
+  const scrollArea = getChatScrollArea();
+  if (!scrollArea) {
+    return;
+  }
+  scrollArea.scrollTo({
+    top: scrollArea.scrollHeight,
+    behavior,
+  });
+  updateScrollToBottomButton();
 }
 
 function renderDocuments() {
@@ -815,77 +995,93 @@ function renderDocuments() {
   }
 
   const assetCount = document.querySelector("#libraryAssetCount");
-
   const libraryText = t().library;
   const libraryPageText = t().pages.library;
   const tableLabels =
     currentLocale === "zh"
-      ? { name: "资产名称", type: "类型", modified: "修改时间", actions: "操作" }
+      ? { name: "文件名称", type: "类型", modified: "更新时间", actions: "操作" }
       : { name: "Asset Name", type: "Type", modified: "Modified", actions: "Actions" };
-  if (documentCache.length === 0) {
-    documentList.innerHTML = `<div class="document-empty">${libraryText.empty}</div>`;
+  const query = normalizeSearchText(pageConfig.library.searchInput?.value || "");
+  const visibleDocuments = getFilteredDocuments(documentCache);
+
+  if (!documentCache.length) {
+    documentList.innerHTML = `<div class="document-empty">${escapeHtml(libraryText.empty)}</div>`;
     if (assetCount) {
       assetCount.textContent = currentLocale === "zh" ? "显示 0 个资产" : "Showing 0 assets";
     }
     return;
   }
 
-  const rows = documentCache
+  if (!visibleDocuments.length) {
+    documentList.innerHTML = `<div class="document-empty">${escapeHtml(query ? libraryText.emptyFiltered : libraryText.empty)}</div>`;
+    if (assetCount) {
+      assetCount.textContent = currentLocale === "zh" ? `显示 0 / ${documentCache.length} 个资产` : `Showing 0 / ${documentCache.length} assets`;
+    }
+    return;
+  }
+
+  const rows = visibleDocuments
     .map((document) => {
       const isDeleting = activeDeleteSource === document.source;
       const iconGlyph = getDocumentIconGlyph(document.file_name);
       const iconTone = getDocumentIconTone(document.file_name);
       const docType = getDocumentTypeLabel(document.file_name);
       return `
-        <div class="document-table-row">
-          <div class="document-cell document-cell-name">
-            <span class="document-file-icon ${iconTone}">
-              <span class="material-symbols-outlined">${iconGlyph}</span>
-            </span>
-            <div class="document-copy">
-              <div class="document-name">${document.file_name}</div>
-              <div class="document-source mono">${document.source || libraryText.unknown}</div>
+          <div class="document-table-row">
+            <div class="document-cell document-cell-name">
+              <span class="document-file-icon ${iconTone}">
+                <span class="material-symbols-outlined">${iconGlyph}</span>
+              </span>
+              <div class="document-copy">
+                <div class="document-name">${document.file_name}</div>
+                <div class="document-source mono">${document.source || libraryText.unknown}</div>
+              </div>
+            </div>
+            <div class="document-cell">${docType}</div>
+            <div class="document-cell">${formatChunkCount(document.chunk_count)}</div>
+            <div class="document-cell">${formatUploadedAt(document.uploaded_at)}</div>
+            <div class="document-cell document-cell-actions">
+              <button
+                type="button"
+                class="document-delete document-delete-icon"
+                data-source="${document.source}"
+                data-file-name="${document.file_name}"
+                aria-label="${libraryPageText.deleteAction}"
+                title="${libraryPageText.deleteAction}"
+                ${isDeleting ? "disabled" : ""}
+              ><span class="material-symbols-outlined">delete</span></button>
             </div>
           </div>
-          <div class="document-cell">${docType}</div>
-          <div class="document-cell">${formatChunkCount(document.chunk_count)}</div>
-          <div class="document-cell">${formatUploadedAt(document.uploaded_at)}</div>
-          <div class="document-cell document-cell-actions">
-            <button
-              type="button"
-              class="document-delete document-delete-icon"
-              data-source="${document.source}"
-              data-file-name="${document.file_name}"
-              aria-label="${libraryPageText.deleteAction}"
-              title="${libraryPageText.deleteAction}"
-              ${isDeleting ? "disabled" : ""}
-            ><span class="material-symbols-outlined">delete</span></button>
-          </div>
-        </div>
-      `;
+        `;
     })
     .join("");
 
   documentList.innerHTML = `
-    <div class="document-table">
-      <div class="document-table-head">
-        <div class="document-table-row">
-          <div class="document-cell">${tableLabels.name}</div>
-          <div class="document-cell">${tableLabels.type}</div>
-          <div class="document-cell">${libraryText.chunks}</div>
-          <div class="document-cell">${tableLabels.modified}</div>
-          <div class="document-cell">${tableLabels.actions}</div>
+      <div class="document-table">
+        <div class="document-table-head">
+          <div class="document-table-row">
+            <div class="document-cell">${tableLabels.name}</div>
+            <div class="document-cell">${tableLabels.type}</div>
+            <div class="document-cell">${libraryText.chunks}</div>
+            <div class="document-cell">${tableLabels.modified}</div>
+            <div class="document-cell">${tableLabels.actions}</div>
+          </div>
         </div>
+        <div class="document-table-body">${rows}</div>
       </div>
-      <div class="document-table-body">${rows}</div>
-    </div>
-  `;
+    `;
 
   if (assetCount) {
-    assetCount.textContent = currentLocale === "zh" ? `显示 ${documentCache.length} 个资产` : `Showing ${documentCache.length} assets`;
+    assetCount.textContent =
+      visibleDocuments.length === documentCache.length
+        ? currentLocale === "zh"
+          ? `显示 ${visibleDocuments.length} 个资产`
+          : `Showing ${visibleDocuments.length} assets`
+        : currentLocale === "zh"
+          ? `显示 ${visibleDocuments.length} / ${documentCache.length} 个资产`
+          : `Showing ${visibleDocuments.length} / ${documentCache.length} assets`;
   }
 }
-
 function applyLocale(locale) {
   currentLocale = locale;
   const text = getPageText();
@@ -958,12 +1154,25 @@ function applyLocale(locale) {
     if (currentPage.webSearchToggleLabel) {
       currentPage.webSearchToggleLabel.textContent = text.webSearchLabel;
     }
-    if (currentPage.webSearchToggleState) {
-      currentPage.webSearchToggleState.textContent = useWebSearch ? text.webSearchOn : text.webSearchOff;
-    }
-    if (currentPage.notesEyebrow) {
-      currentPage.notesEyebrow.textContent = text.notesEyebrow;
-    }
+      if (currentPage.webSearchToggleState) {
+        currentPage.webSearchToggleState.textContent = useWebSearch ? text.webSearchOn : text.webSearchOff;
+      }
+      if (currentPage.searchInput) {
+        currentPage.searchInput.placeholder = text.placeholder;
+        currentPage.searchInput.setAttribute("aria-label", text.placeholder);
+      }
+      if (currentPage.searchEyebrow) {
+        currentPage.searchEyebrow.textContent = text.searchPanelEyebrow;
+      }
+      if (currentPage.searchTitle) {
+        currentPage.searchTitle.textContent = text.searchPanelTitle;
+      }
+      if (currentPage.searchSummary && currentSearchQuery) {
+        currentPage.searchSummary.textContent = text.searchPanelSummary?.(0) || "";
+      }
+      if (currentPage.notesEyebrow) {
+        currentPage.notesEyebrow.textContent = text.notesEyebrow;
+      }
     if (currentPage.notesTitle) {
       currentPage.notesTitle.textContent = text.notesTitle;
     }
@@ -994,14 +1203,15 @@ function applyLocale(locale) {
     if (currentPage.stateTitle) {
       currentPage.stateTitle.textContent = text.stateTitle;
     }
-    if (currentPage.stateText) {
-      currentPage.stateText.textContent = text.stateText;
-    }
-    currentPage.notificationsButton?.setAttribute("aria-label", t().common.notifications);
-    currentPage.historyButton?.setAttribute("aria-label", t().common.history);
-    renderRoleLabels();
-    renderSourceLabels();
-    document.querySelectorAll(".message").forEach((message) => renderMessageContent(message));
+      if (currentPage.stateText) {
+        currentPage.stateText.textContent = text.stateText;
+      }
+      currentPage.notificationsButton?.setAttribute("aria-label", t().common.notifications);
+      currentPage.historyButton?.setAttribute("aria-label", t().common.history);
+      renderSearchPanel(currentSearchQuery);
+      renderRoleLabels();
+      renderSourceLabels();
+      document.querySelectorAll(".message").forEach((message) => renderMessageContent(message));
     renderConversationList();
     if (conversationListCache.length) {
       setConversationRailStatus(text.conversationsReady(conversationListCache.length));
@@ -1327,15 +1537,16 @@ function renderConversationTranscript(messages = []) {
     const article = buildMessageArticle(message.role || "assistant");
     messageList.appendChild(article);
     populateMessageArticle(article, message.content || "", Array.isArray(message.sources) ? message.sources : [], { scroll: false });
+    setMessageMemoryNotice(article, Array.isArray(message.memory_notices) ? message.memory_notices : []);
   }
-  scrollMessages();
+  requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
 }
 
-function renderConversationList() {
-  const { conversationList } = pageConfig.chat;
-  if (!conversationList) {
-    return;
-  }
+  function renderConversationList() {
+    const { conversationList } = pageConfig.chat;
+    if (!conversationList) {
+      return;
+    }
   const chatText = t().pages.chat;
   if (!conversationListCache.length) {
     conversationList.innerHTML = `<div class="conversation-empty">${chatText.conversationsEmpty}</div>`;
@@ -1374,8 +1585,282 @@ function renderConversationList() {
         </div>
       `;
     })
-    .join("");
-}
+      .join("");
+  }
+
+  function normalizeSearchText(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
+  function buildSearchTokens(query) {
+    const normalized = normalizeSearchText(query);
+    if (!normalized) {
+      return [];
+    }
+    return normalized.split(/\s+/).filter(Boolean);
+  }
+
+  function matchesSearchTokens(haystack, tokens) {
+    if (!tokens.length) {
+      return true;
+    }
+    const normalizedHaystack = normalizeSearchText(haystack);
+    return tokens.every((token) => normalizedHaystack.includes(token));
+  }
+
+  function highlightSearchText(text, tokens) {
+    const escaped = escapeHtml(text);
+    if (!tokens.length) {
+      return escaped;
+    }
+    const sortedTokens = [...new Set(tokens)].filter(Boolean).sort((left, right) => right.length - left.length);
+    let result = escaped;
+    for (const token of sortedTokens) {
+      const pattern = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (!pattern) {
+        continue;
+      }
+      result = result.replace(new RegExp(pattern, "gi"), (match) => `<mark>${match}</mark>`);
+    }
+    return result;
+  }
+
+  function excerptSearchText(text, tokens, limit = 180) {
+    const normalized = String(text || "").trim();
+    if (!normalized) {
+      return "";
+    }
+    const compact = normalized.replace(/\s+/g, " ");
+    if (!tokens.length) {
+      return compact.slice(0, limit);
+    }
+    const haystack = compact.toLowerCase();
+    const matchIndex = tokens.reduce((best, token) => {
+      const index = haystack.indexOf(token);
+      return index !== -1 && (best === -1 || index < best) ? index : best;
+    }, -1);
+    if (matchIndex === -1) {
+      return compact.slice(0, limit);
+    }
+    const start = Math.max(0, matchIndex - Math.floor(limit / 3));
+    const end = Math.min(compact.length, start + limit);
+    const prefix = start > 0 ? "…" : "";
+    const suffix = end < compact.length ? "…" : "";
+    return `${prefix}${compact.slice(start, end)}${suffix}`;
+  }
+
+  function getConversationSearchMatches(queryTokens) {
+    const results = [];
+    const currentMessages = conversationHistory.filter((message) => matchesSearchTokens(`${message.role} ${message.content}`, queryTokens));
+    if (currentMessages.length) {
+      const snippet = currentMessages[0]?.content || "";
+      results.push({
+        kind: "current",
+        title: t().pages.chat.searchSectionCurrent,
+        meta: activeConversationId ? getConversationMeta(conversationListCache.find((item) => item.id === activeConversationId)) || "" : "",
+        snippet,
+        detail: `${currentMessages.length} ${currentLocale === "zh" ? "条命中" : "matches"}`,
+      });
+    }
+
+    conversationListCache.forEach((conversation) => {
+      const rawTitle = String(conversation.title || "").trim();
+      const title =
+        !rawTitle || rawTitle === "New chat" || rawTitle === "\u65b0\u5bf9\u8bdd"
+          ? t().pages.chat.conversationFallbackTitle
+          : rawTitle;
+      const preview = String(conversation.last_message_preview || "").trim();
+      const meta = getConversationMeta(conversation) || "";
+      const haystack = [title, preview, meta, conversation.id || ""].join(" ");
+      if (!matchesSearchTokens(haystack, queryTokens)) {
+        return;
+      }
+      results.push({
+        kind: "conversation",
+        id: conversation.id || "",
+        title,
+        meta,
+        snippet: preview,
+      });
+    });
+    return results;
+  }
+
+  function getDocumentSearchMatches(queryTokens) {
+    return documentCache
+      .filter((document) => {
+        const haystack = [document.file_name, document.source, document.chunk_count, document.uploaded_at, document.md5].join(" ");
+        return matchesSearchTokens(haystack, queryTokens);
+      })
+      .map((document) => ({
+        kind: "document",
+        title: document.file_name || document.source || t().library.unknown,
+        meta: [document.source, document.chunk_count != null ? `${document.chunk_count} chunks` : ""].filter(Boolean).join(" · "),
+        snippet: document.source || "",
+      }));
+  }
+
+  function getMemorySearchMatches(queryTokens) {
+    return memoryCache
+      .filter((entry) => {
+        const tags = Array.isArray(entry.tags) ? entry.tags.join(" ") : "";
+        const haystack = [entry.title, entry.summary, entry.memory_type, entry.status, tags, entry.scope, entry.layer].join(" ");
+        return matchesSearchTokens(haystack, queryTokens);
+      })
+      .map((entry) => ({
+        kind: "memory",
+        title: entry.title || entry.memory_type || t().pages.chat.searchSectionMemories,
+        meta: [entry.memory_type, entry.status, Array.isArray(entry.tags) && entry.tags.length ? entry.tags.join(", ") : ""]
+          .filter(Boolean)
+          .join(" · "),
+        snippet: String(entry.summary || "").trim(),
+      }));
+  }
+
+  function renderSearchPanel(query) {
+    const panel = pageConfig.chat.searchPanel;
+    const resultsHost = pageConfig.chat.searchResults;
+    const summary = pageConfig.chat.searchSummary;
+    const transcript = pageConfig.chat.transcriptPanel;
+    if (!panel || !resultsHost || !summary) {
+      return;
+    }
+
+    const tokens = buildSearchTokens(query);
+    const hasQuery = tokens.length > 0;
+    panel.hidden = !hasQuery;
+    if (transcript) {
+      transcript.hidden = hasQuery;
+    }
+
+    if (!hasQuery) {
+      resultsHost.innerHTML = "";
+      summary.textContent = "";
+      return;
+    }
+
+    if (!searchIndexReady) {
+      summary.textContent = t().pages.chat.searchLoading;
+      resultsHost.innerHTML = `<div class="page-search-empty">${escapeHtml(t().pages.chat.searchLoading)}</div>`;
+      return;
+    }
+
+    const conversationMatches = getConversationSearchMatches(tokens);
+    const documentMatches = getDocumentSearchMatches(tokens);
+    const memoryMatches = getMemorySearchMatches(tokens);
+    const totalMatches = conversationMatches.length + documentMatches.length + memoryMatches.length;
+    summary.textContent = totalMatches
+      ? t().pages.chat.searchPanelSummary(totalMatches)
+      : t().pages.chat.searchNoMatches;
+
+    const sections = [];
+    const renderItem = (item) => {
+      const title = highlightSearchText(item.title || "", tokens);
+      const meta = item.meta ? highlightSearchText(item.meta, tokens) : "";
+      const snippetSource = item.snippet || item.detail || "";
+      const snippet = snippetSource ? highlightSearchText(excerptSearchText(snippetSource, tokens), tokens) : "";
+      return `
+        <article class="page-search-item page-search-item-${item.kind}">
+          <div class="page-search-item-head">
+            <span class="page-search-item-kind">${escapeHtml(
+              item.kind === "conversation"
+                ? t().pages.chat.searchSectionConversations
+                : item.kind === "document"
+                  ? t().pages.chat.searchSectionDocuments
+                  : item.kind === "memory"
+                    ? t().pages.chat.searchSectionMemories
+                    : item.kind,
+            )}</span>
+            <strong class="page-search-item-title">${title}</strong>
+          </div>
+          ${meta ? `<div class="page-search-item-meta">${meta}</div>` : ""}
+          ${snippet ? `<p class="page-search-item-snippet">${snippet}</p>` : ""}
+        </article>
+      `;
+    };
+
+    if (conversationMatches.length) {
+      sections.push(`
+        <section class="page-search-group">
+          <div class="page-search-group-head">
+            <h3>${escapeHtml(t().pages.chat.searchSectionCurrent)}</h3>
+            <span class="page-search-count">${conversationMatches.length}</span>
+          </div>
+          <div class="page-search-items">${conversationMatches.slice(0, 6).map(renderItem).join("")}</div>
+        </section>
+      `);
+    }
+    if (documentMatches.length) {
+      sections.push(`
+        <section class="page-search-group">
+          <div class="page-search-group-head">
+            <h3>${escapeHtml(t().pages.chat.searchSectionDocuments)}</h3>
+            <span class="page-search-count">${documentMatches.length}</span>
+          </div>
+          <div class="page-search-items">${documentMatches.slice(0, 6).map(renderItem).join("")}</div>
+        </section>
+      `);
+    }
+    if (memoryMatches.length) {
+      sections.push(`
+        <section class="page-search-group">
+          <div class="page-search-group-head">
+            <h3>${escapeHtml(t().pages.chat.searchSectionMemories)}</h3>
+            <span class="page-search-count">${memoryMatches.length}</span>
+          </div>
+          <div class="page-search-items">${memoryMatches.slice(0, 6).map(renderItem).join("")}</div>
+        </section>
+      `);
+    }
+
+    if (!sections.length) {
+      resultsHost.innerHTML = `<div class="page-search-empty">${escapeHtml(t().pages.chat.searchNoMatches)}</div>`;
+      return;
+    }
+    resultsHost.innerHTML = sections.join("");
+  }
+
+  async function fetchDocumentIndex() {
+    const response = await fetch("/documents", { headers: { Accept: "application/json" } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.detail || t().library.failed);
+    }
+    documentCache = Array.isArray(payload.documents) ? payload.documents : [];
+    return documentCache;
+  }
+
+  async function fetchMemoryIndex() {
+    const response = await fetch("/memories", { headers: { Accept: "application/json" } });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload.detail || t().pages.memory?.loadFailed || "Failed to load memories.");
+    }
+    memoryCache = Array.isArray(payload.memories) ? payload.memories : [];
+    return memoryCache;
+  }
+
+  async function primeSearchIndexes() {
+    if (searchIndexPromise) {
+      return searchIndexPromise;
+    }
+    searchIndexPromise = Promise.allSettled([fetchDocumentIndex(), fetchMemoryIndex()]).finally(() => {
+      searchIndexPromise = null;
+      searchIndexReady = true;
+    });
+    return searchIndexPromise;
+  }
+
+  function applyChatSearch(query) {
+    currentSearchQuery = String(query || "");
+    renderSearchPanel(currentSearchQuery);
+  }
+
+  function refreshActiveSearchResults() {
+    if (currentSearchQuery) {
+      renderSearchPanel(currentSearchQuery);
+    }
+  }
 
 function getRecentHistory() {
   return conversationHistory.slice(-MAX_HISTORY_MESSAGES);
@@ -1409,12 +1894,13 @@ async function fetchConversationList() {
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
     throw new Error(payload.detail || t().pages.chat.conversationsFailed);
+    }
+    conversationListCache = Array.isArray(payload.conversations) ? payload.conversations : [];
+    renderConversationList();
+    refreshActiveSearchResults();
+    setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
+    return conversationListCache;
   }
-  conversationListCache = Array.isArray(payload.conversations) ? payload.conversations : [];
-  renderConversationList();
-  setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
-  return conversationListCache;
-}
 
 async function loadConversation(conversationId, { updateStatus = true } = {}) {
   const normalizedId = String(conversationId || "").trim();
@@ -1440,7 +1926,9 @@ async function loadConversation(conversationId, { updateStatus = true } = {}) {
   setActiveConversationId(conversation.id || normalizedId);
   syncConversationHistory(messages);
   renderConversationTranscript(messages);
+  requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
   renderConversationList();
+  refreshActiveSearchResults();
   setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
 }
 
@@ -1481,6 +1969,8 @@ async function deleteConversation(conversationId, conversationTitle) {
     } else {
       setConversationRailStatus(t().pages.chat.conversationsReady(conversationListCache.length));
     }
+    refreshActiveSearchResults();
+    showToast(t().pages.chat.conversationDeletedToast(normalizedTitle), "success");
     return true;
   } catch (error) {
     setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
@@ -1508,7 +1998,9 @@ async function createNewConversation() {
   setActiveConversationId(conversation.id || "");
   syncConversationHistory([]);
   createIntroMessage();
+  requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
   await fetchConversationList();
+  refreshActiveSearchResults();
 }
 
 async function initializeChatSessions() {
@@ -1525,14 +2017,18 @@ async function initializeChatSessions() {
       setActiveConversationId("");
       syncConversationHistory([]);
       createIntroMessage();
+      requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
       setConversationRailStatus(t().pages.chat.conversationsEmpty);
+      refreshActiveSearchResults();
     }
   } catch (error) {
     conversationListCache = [];
     setActiveConversationId("");
     syncConversationHistory([]);
     createIntroMessage();
+    requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
     renderConversationList();
+    refreshActiveSearchResults();
     setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
   }
 }
@@ -1617,6 +2113,10 @@ function handleStreamEvent(rawEvent, assistantMessage) {
     if ((payload.sources || []).length && assistantMessage.dataset.activeTool === "web_search") {
       setMessageToolStatus(assistantMessage, t().toolStatus.done, "done");
     }
+    return false;
+  }
+  if (eventName === "memory_notices") {
+    setMessageMemoryNotice(assistantMessage, payload.items || []);
     return false;
   }
   if (eventName === "progress") {
@@ -1705,9 +2205,55 @@ async function streamAnswer(question, history, assistantMessage) {
 }
 
 function initChatPage() {
-  const { form, input, conversationList, newConversationButton, webSearchToggleButton } = pageConfig.chat;
+  const {
+    form,
+    input,
+    searchInput,
+    searchPanel,
+    conversationList,
+    newConversationButton,
+    webSearchToggleButton,
+    scrollArea,
+    scrollToBottomButton,
+  } = pageConfig.chat;
   if (!form || !input || !conversationList || !newConversationButton) {
     return;
+  }
+
+  if (scrollArea) {
+    scrollArea.addEventListener(
+      "scroll",
+      () => {
+        updateScrollToBottomButton();
+      },
+      { passive: true },
+    );
+    requestAnimationFrame(() => updateScrollToBottomButton());
+  }
+
+  if (scrollToBottomButton) {
+    scrollToBottomButton.addEventListener("click", () => {
+      scrollMessages({ behavior: "smooth" });
+    });
+  }
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value || "";
+      applyChatSearch(query);
+      if (normalizeSearchText(query) && !searchIndexReady) {
+        void primeSearchIndexes().then(() => {
+          refreshActiveSearchResults();
+        });
+      }
+    });
+    searchInput.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        searchInput.value = "";
+        applyChatSearch("");
+        input.focus();
+      }
+    });
   }
 
   if (webSearchToggleButton) {
@@ -1757,6 +2303,7 @@ function initChatPage() {
     try {
       setChatBusy(true);
       await loadConversation(conversationId);
+      requestAnimationFrame(() => scrollMessages({ behavior: "auto" }));
       setStatus("ready");
     } catch (error) {
       setConversationRailStatus(error instanceof Error ? error.message : t().pages.chat.conversationsFailed);
@@ -1794,11 +2341,11 @@ function initChatPage() {
       );
       await fetchConversationList();
       setStatus("ready");
-    } catch (error) {
-      const detail = error instanceof Error ? error.message : t().status.failed;
-      setMessageToolStatus(assistantMessage, t().toolStatus.failed, "failed");
-      if (getMessageText(assistantMessage)) {
-        appendMessageText(assistantMessage, `\n\n${t().errors.requestFailed} ${detail}`);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : t().status.failed;
+        setMessageToolStatus(assistantMessage, t().toolStatus.failed, "failed");
+        if (getMessageText(assistantMessage)) {
+          appendMessageText(assistantMessage, `\n\n${t().errors.requestFailed} ${detail}`);
       } else {
         setMessageText(assistantMessage, `${t().errors.requestFailed} ${detail}`);
       }
@@ -1809,11 +2356,12 @@ function initChatPage() {
     }
   });
 
+  void primeSearchIndexes();
   void initializeChatSessions();
 }
 
 function initLibraryPage() {
-  const { uploadForm, fileInput, documentList } = pageConfig.library;
+  const { uploadForm, fileInput, documentList, searchInput } = pageConfig.library;
   if (!uploadForm || !fileInput || !documentList) {
     return;
   }
@@ -1826,6 +2374,12 @@ function initLibraryPage() {
     }
     setUploadStatus("selected", file.name);
   });
+
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      renderDocuments();
+    });
+  }
 
   uploadForm.addEventListener("submit", async (event) => {
     event.preventDefault();

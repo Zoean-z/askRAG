@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/styles.css">
 </head>
-<body data-page="chat">
+<body data-page="chat" data-theme="dark">
   <div class="app-shell app-shell-chat">
     <aside class="sidebar stitch-sidebar">
       <div class="sidebar-brand">
@@ -82,40 +82,52 @@
         </div>
 
         <div class="stitch-header-tools">
-          <label class="stitch-header-search">
-            <input type="text" placeholder="搜索会话..." aria-label="搜索会话">
+          <label class="stitch-header-search" for="chatSearchInput">
+            <input
+              id="chatSearchInput"
+              type="text"
+              placeholder="Search conversations, files, and memories..."
+              aria-label="Search conversations, files, and memories"
+            >
             <span class="material-symbols-outlined">search</span>
           </label>
-          <div class="utility-actions">
-            <button id="chatNotificationsButton" class="icon-button" type="button" aria-label="Notifications">
-              <span class="material-symbols-outlined">notifications</span>
-            </button>
-            <button id="chatHistoryButton" class="icon-button" type="button" aria-label="History">
-              <span class="material-symbols-outlined">history</span>
-            </button>
-          </div>
         </div>
       </header>
 
-      <main class="stitch-main">
-        <div class="stitch-scroll-area">
-          <div class="stitch-scroll-inner">
-            <section id="transcriptPanel" class="stitch-transcript" aria-label="Conversation transcript">
-              <div id="messageList" class="message-list message-list-chat">
+        <section id="pageSearchPanel" class="page-search-panel" hidden aria-live="polite">
+          <div class="page-search-panel-head">
+            <div>
+              <p id="pageSearchEyebrow" class="eyebrow">Search</p>
+              <h2 id="pageSearchTitle">Page search results</h2>
+            </div>
+            <p id="pageSearchSummary" class="status-text page-search-summary"></p>
+          </div>
+          <div id="pageSearchResults" class="page-search-results"></div>
+        </section>
+
+        <main class="stitch-main">
+          <div class="stitch-scroll-area">
+            <div class="stitch-scroll-inner">
+              <section id="transcriptPanel" class="stitch-transcript" aria-label="Conversation transcript">
+                <div id="messageList" class="message-list message-list-chat">
                 <article class="message message-assistant message-intro" data-role-key="assistant">
                   <div id="introMessage" class="message-body">
                     <p>Enter a question to start.</p>
                   </div>
                 </article>
               </div>
-            </section>
+              </section>
+            </div>
           </div>
-        </div>
-      </main>
+        </main>
 
-      <div class="stitch-composer-dock">
-        <div class="stitch-composer-frame">
-          <form id="chatForm" class="stitch-composer" novalidate>
+        <button id="scrollToBottomButton" class="scroll-to-bottom-button" type="button" hidden aria-label="回到底部">
+          <span class="material-symbols-outlined">south</span>
+        </button>
+
+        <div class="stitch-composer-dock">
+          <div class="stitch-composer-frame">
+            <form id="chatForm" class="stitch-composer" novalidate>
             <label id="questionLabel" class="sr-only" for="questionInput">Question</label>
             <textarea
               id="questionInput"
@@ -166,10 +178,22 @@
 
         <div class="workspace-modal-grid">
           <div class="workspace-modal-block">
-            <p id="settingsLanguageLabel" class="workspace-modal-label">Language</p>
-            <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
-              <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
-              <button id="localeEn" class="locale-button" type="button">EN</button>
+            <div class="workspace-modal-controls">
+              <div class="workspace-modal-control">
+                <p id="settingsLanguageLabel" class="workspace-modal-label">Language</p>
+                <div id="localeSwitch" class="locale-switch" aria-label="Language switcher">
+                  <button id="localeZh" class="locale-button is-active" type="button">ZH</button>
+                  <button id="localeEn" class="locale-button" type="button">EN</button>
+                </div>
+              </div>
+
+              <div class="workspace-modal-control">
+                <p id="settingsThemeLabel" class="workspace-modal-label">Theme</p>
+                <div id="themeSwitch" class="locale-switch" aria-label="Theme switcher">
+                  <button id="themeDark" class="locale-button is-active" type="button">Dark</button>
+                  <button id="themeLight" class="locale-button" type="button">Light</button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -203,10 +227,16 @@
     </div>
   </div>
 
+  <div id="toastHost" class="toast-host" aria-live="polite" aria-atomic="true"></div>
+
   <template id="messageTemplate">
     <article class="message" data-role-key="assistant">
       <div class="message-thinking" aria-hidden="true">
         <span class="message-thinking-dot"></span>
+      </div>
+      <div class="message-memory-note" hidden>
+        <span class="material-symbols-outlined message-memory-note-icon" aria-hidden="true">edit_note</span>
+        <span class="message-memory-note-text"></span>
       </div>
       <div class="message-body"></div>
       <div class="message-sources"></div>

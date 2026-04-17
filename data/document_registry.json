@@ -28,6 +28,13 @@
     "chunk_count": 9
   },
   {
+    "file_name": "OpenAI简介.md",
+    "source": "data/docs/OpenAI简介.md",
+    "md5": "e367fde815f2dcb67c07c910483a64b3",
+    "uploaded_at": null,
+    "chunk_count": 4
+  },
+  {
     "file_name": "project_intro.txt",
     "source": "data/docs/project_intro.txt",
     "md5": "06e30784eb594eb327e799b778be8a9e",
