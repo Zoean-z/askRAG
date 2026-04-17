@@ -1,7 +1,7 @@
 # Project Status
 
 ## Current Goal
-- Separate web provider failure from empty/irrelevant web results so failures are reported accurately.
+- Reduce end-to-end chat latency safely, with priority on the streaming path and the most obvious serial bottlenecks.
 
 ## Current Memory Files
 - `AGENTS.md`
@@ -12,17 +12,13 @@
 - `data/loop_state.json`
 
 ## Current State
-- The graph still owns the main execution path.
-- Ordinary requests enter graph with router hints plus a lightweight local-doc probe before final planning.
-- The pre-plan trio is now structurally parallelized so the three independent nodes can complete before `plan_request`.
-- The router remains thin: strong constraints stay in the router, while ordinary doc/web/summary strategy decisions are graph-owned.
-- Summary strategy is graph-owned and can choose pure local summary or summary plus web supplement.
-- Explicit `remember ...` still short-circuits at the API entry.
-- The chat UI still supports deleting a conversation thread from the history rail.
-- The sidebar is now being widened so the delete affordance is easier to spot.
-- The backend delete endpoint already existed; the frontend action and state refresh are unchanged.
-- The local sufficiency layer now distinguishes retrieval relevance from answer sufficiency so doc-hit questions can still fall back to web when coverage is incomplete.
-- Web provider failures are now classified separately from empty/irrelevant web results, and provider failure details are surfaced instead of being generalized into evidence insufficiency.
+- The repository goal has shifted from web-failure wording to performance diagnosis and safe latency reduction.
+- `suggestion.md` provides a useful hypothesis list, but it was written against an older commit and needs validation against the current code.
+- The streaming graph path now runs the preplan trio through a shared parallel helper instead of manually nesting the three nodes in sequence.
+- `/ask/stream` now emits lightweight diagnostic markers at request start and completion so real latency can be measured from logs.
+- OpenViking memory reads still depend on synchronous CLI subprocess calls and multi-query serial search, so they remain a likely latency contributor.
+- Direct web search and retrieval web steps still include multiple model and tool calls, but they should be optimized only after real timing data is collected.
+- Local compile and relevant unit tests pass, but live request verification is still pending because the local backend process is not currently running.
 
 ## Suggested Next Step
-- Re-run the live web repros and verify provider failure details surface cleanly while irrelevant/empty web results still use the generic insufficient wording.
+- Start the local service, run one real slow `/ask/stream` request, and confirm the new preplan and request-level timing diagnostics before moving on to OpenViking caching.

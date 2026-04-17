@@ -525,6 +525,18 @@ def _run_direct_web_search_quality_pass(
         )
         debug["failure_category"] = failure_category
         debug["final_failure_reason"] = final_failure_reason
+        log_diagnostic_event(
+            "web_search_total_complete",
+            started_at=started_at,
+            question=question,
+            query_count=len(queries),
+            selected_query=best_query,
+            source_count=len(best_sources),
+            failure_category=failure_category,
+            final_failure_reason=final_failure_reason,
+            web_relevance_score=best_score,
+            web_relevant=best_relevant,
+        )
         return final_failure_reason, [], debug
     if _is_freshness_or_high_trust_question(question, tool_plan) and not best_official:
         debug["official_preference_unmet"] = True
@@ -564,6 +576,16 @@ def _run_direct_web_search_quality_pass(
         debug["raw_web_result_count"] = best_raw_count
         debug["parsed_web_result_count"] = len(best_sources)
         debug["final_failure_reason"] = build_web_search_failure_message(provider_error)
+        log_diagnostic_event(
+            "web_search_total_complete",
+            started_at=started_at,
+            question=question,
+            query_count=len(queries),
+            selected_query=best_query,
+            source_count=len(best_sources),
+            failure_category="provider_failure",
+            final_failure_reason=build_web_search_failure_message(provider_error),
+        )
         return build_web_search_failure_message(provider_error), [], debug
     summarized = response.choices[0].message.content or EMPTY_ANSWER_MESSAGE
     log_diagnostic_event(
@@ -587,6 +609,18 @@ def _run_direct_web_search_quality_pass(
         failure_category="success",
         final_failure_reason="",
         answer_preview=summarized[:180],
+    )
+    log_diagnostic_event(
+        "web_search_total_complete",
+        started_at=started_at,
+        question=question,
+        query_count=len(queries),
+        selected_query=best_query,
+        source_count=len(best_sources),
+        failure_category="success",
+        final_failure_reason="",
+        web_relevance_score=best_score,
+        web_relevant=best_relevant,
     )
     return summarized.strip() or EMPTY_ANSWER_MESSAGE, best_sources, debug
 
@@ -848,14 +882,25 @@ def answer_directly_detailed(
     memory_context: str | None = None,
     response_constraints: dict[str, object] | None = None,
 ) -> AnswerRunResult:
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     reference_history = reference_history if reference_history is not None else build_reference_history(question, history)
     normalized_key = normalize_direct_answer_key(question)
     if normalized_key in DIRECT_ANSWER_MAP:
-        return AnswerRunResult(
+        result = AnswerRunResult(
             answer=format_direct_answer(DIRECT_ANSWER_MAP[normalized_key]),
             sources=[],
             trace={"mode": "direct_answer", "layers_used": [], "selected_source": None, "drilldown_path": ["direct_answer"]},
         )
+        log_diagnostic_event(
+            "finalize_answer_complete",
+            started_at=started_at,
+            question=question,
+            mode="direct_answer_static",
+            source_count=0,
+        )
+        return result
 
     client = get_chat_client()
     resolved_memory_context = memory_context if memory_context is not None else build_memory_context(question, history=reference_history)
@@ -871,7 +916,7 @@ def answer_directly_detailed(
         ),
     )
     answer = response.choices[0].message.content or EMPTY_ANSWER_MESSAGE
-    return AnswerRunResult(
+    result = AnswerRunResult(
         answer=format_direct_answer(answer),
         sources=[],
         trace={
@@ -882,6 +927,15 @@ def answer_directly_detailed(
             "debug": {"memory_context_used": bool(resolved_memory_context)},
         },
     )
+    log_diagnostic_event(
+        "finalize_answer_complete",
+        started_at=started_at,
+        question=question,
+        mode="direct_answer",
+        source_count=0,
+        memory_context_used=bool(resolved_memory_context),
+    )
+    return result
 
 
 def answer_directly(question: str, history: list[dict[str, str]] | None = None) -> tuple[str, list[str]]:
@@ -928,6 +982,9 @@ def summarize_loaded_document_detailed(
     memory_context: str | None = None,
     response_constraints: dict[str, object] | None = None,
 ) -> AnswerRunResult:
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     reference_history = reference_history if reference_history is not None else build_reference_history(question, history)
     source = document.metadata.get("source", "unknown")
     content = document.page_content.strip()
@@ -955,7 +1012,17 @@ def summarize_loaded_document_detailed(
         ),
     )
     answer = response.choices[0].message.content or EMPTY_ANSWER_MESSAGE
-    return AnswerRunResult(answer=answer.strip(), sources=[source], trace=context_plan.to_dict())
+    result = AnswerRunResult(answer=answer.strip(), sources=[source], trace=context_plan.to_dict())
+    log_diagnostic_event(
+        "finalize_answer_complete",
+        started_at=started_at,
+        question=question,
+        mode="local_summary",
+        source_count=1,
+        selected_source=source,
+        memory_context_used=bool(resolved_memory_context),
+    )
+    return result
 
 
 def summarize_loaded_document(document: Document, question: str) -> tuple[str, list[str]]:

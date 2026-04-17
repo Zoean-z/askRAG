@@ -999,6 +999,10 @@ def _search_openviking_memory_entries(
     limit: int = 6,
     sources: list[str] | None = None,
 ) -> list[dict[str, Any]]:
+    from time import perf_counter
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     normalized_question = question.strip()
     if not normalized_question:
         return []
@@ -1020,6 +1024,16 @@ def _search_openviking_memory_entries(
         if str(entry.get("openviking_resource_uri") or "").strip()
     }
     if not active_entries:
+        log_diagnostic_event(
+            "openviking_memory_search_complete",
+            started_at=started_at,
+            question=question,
+            query_count=len(queries[:3]),
+            active_entry_count=0,
+            hit_count=0,
+            skipped=True,
+            reason="no_active_openviking_entries",
+        )
         return []
     matched: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
@@ -1042,8 +1056,26 @@ def _search_openviking_memory_entries(
             seen_ids.add(entry_id)
             matched.append(entry)
             if len(matched) >= limit:
+                log_diagnostic_event(
+                    "openviking_memory_search_complete",
+                    started_at=started_at,
+                    question=question,
+                    query_count=len(queries[:3]),
+                    active_entry_count=len(active_entries),
+                    hit_count=len(matched),
+                    skipped=False,
+                )
                 return matched
 
+    log_diagnostic_event(
+        "openviking_memory_search_complete",
+        started_at=started_at,
+        question=question,
+        query_count=len(queries[:3]),
+        active_entry_count=len(active_entries),
+        hit_count=len(matched),
+        skipped=False,
+    )
     return matched
 
 

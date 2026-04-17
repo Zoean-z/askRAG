@@ -1718,6 +1718,7 @@ def _workflow_fallback_answer(state: WorkflowState) -> str:
 
 
 def _run_summarize_step(state: WorkflowState) -> tuple[str, list[str]]:
+    started_at = perf_counter()
     _advance_step(state, "summarize")
     if state.status != "running":
         return state.final_answer or REFUSAL_MESSAGE, state.sources
@@ -1730,6 +1731,15 @@ def _run_summarize_step(state: WorkflowState) -> tuple[str, list[str]]:
         state.final_answer = _workflow_fallback_answer(state)
         state.sources = _final_response_sources(state)
         state.status = "done"
+        log_diagnostic_event(
+            "finalize_answer_complete",
+            started_at=started_at,
+            question=state.question,
+            mode="workflow_fallback",
+            source_count=len(state.sources),
+            selected_source=state.sources[0] if state.sources else None,
+            local_with_web_caveat=local_with_web_caveat,
+        )
         return state.final_answer, state.sources
 
     standalone_question = state.local_bundle.rewritten_question if state.local_bundle else None
@@ -1750,6 +1760,17 @@ def _run_summarize_step(state: WorkflowState) -> tuple[str, list[str]]:
     state.final_answer = _append_web_caveat_notice(answer) if local_with_web_caveat else (answer.strip() or EMPTY_ANSWER_MESSAGE)
     state.sources = _final_response_sources(state)
     state.status = "done"
+    log_diagnostic_event(
+        "finalize_answer_complete",
+        started_at=started_at,
+        question=state.question,
+        mode="workflow_finalize",
+        source_count=len(state.sources),
+        selected_source=state.sources[0] if state.sources else None,
+        local_with_web_caveat=local_with_web_caveat,
+        web_attempted=state.web_attempted,
+        web_relevant=state.web_relevant,
+    )
     return state.final_answer, state.sources
 
 

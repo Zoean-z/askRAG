@@ -44,10 +44,25 @@ from app.validators import RetrievalValidation, validate_chunk_results
 from app.workflow import WorkflowState
 
 DIAGNOSTIC_LOGGER = logging.getLogger("askrag.diagnostic")
+DIAGNOSTIC_LOG_PATH = Path(__file__).resolve().parent.parent / "data" / "runtime" / "perf_debug.jsonl"
 SOURCE_LABEL_PATTERN = re.compile(r"^(?P<title>.+?)\s*\((?P<url>https?://[^)]+)\)\s*$")
 
 
+def _ensure_diagnostic_logger() -> None:
+    DIAGNOSTIC_LOGGER.setLevel(logging.INFO)
+    DIAGNOSTIC_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    log_path = str(DIAGNOSTIC_LOG_PATH)
+    for handler in DIAGNOSTIC_LOGGER.handlers:
+        if isinstance(handler, logging.FileHandler) and getattr(handler, "baseFilename", "") == log_path:
+            return
+    file_handler = logging.FileHandler(log_path, encoding="utf-8")
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(logging.Formatter("%(message)s"))
+    DIAGNOSTIC_LOGGER.addHandler(file_handler)
+
+
 def log_diagnostic_event(stage: str, *, started_at: float | None = None, **payload: object) -> None:
+    _ensure_diagnostic_logger()
     event = {"stage": stage, **payload}
     if started_at is not None:
         event["elapsed_ms"] = round((perf_counter() - started_at) * 1000, 1)

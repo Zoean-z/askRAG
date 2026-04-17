@@ -1,17 +1,20 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from app.rag import BASE_DIR
 
 DEFAULT_OV_TIMEOUT = int(os.getenv("ASKRAG_OPENVIKING_TIMEOUT_SECONDS", "120"))
 OPENVIKING_RUNTIME_ROLE = "memory_context_infrastructure"
+DIAGNOSTIC_LOGGER = logging.getLogger("askrag.diagnostic")
 
 
 class OpenVikingRuntimeError(ValueError):
@@ -134,6 +137,7 @@ def search_openviking_resources(
     mode: str = "search",
     node_limit: int = 10,
 ) -> list[OpenVikingResourceHit]:
+    started_at = perf_counter()
     ensure_openviking_healthy()
     command = mode.strip().casefold()
     if command not in {"search", "find"}:
@@ -173,4 +177,20 @@ def search_openviking_resources(
         )
 
     hits.sort(key=lambda item: (item.score, item.level, item.uri))
+    DIAGNOSTIC_LOGGER.info(
+        "DIAG %s",
+        json.dumps(
+            {
+                "stage": "openviking_cli_search_complete",
+                "elapsed_ms": round((perf_counter() - started_at) * 1000, 1),
+                "query": query,
+                "mode": command,
+                "root_uri": root_uri,
+                "node_limit": max(1, node_limit),
+                "hit_count": len(hits),
+            },
+            ensure_ascii=False,
+            default=str,
+        ),
+    )
     return hits

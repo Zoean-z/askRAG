@@ -749,6 +749,10 @@ def llm_tool_plan(
     question: str,
     history: list[dict[str, str]] | None = None,
 ) -> ToolPlan:
+    from time import perf_counter
+    from app.agent_tools import log_diagnostic_event
+
+    started_at = perf_counter()
     client = get_chat_client()
     response = client.chat.completions.create(
         model=get_chat_model(),
@@ -756,7 +760,18 @@ def llm_tool_plan(
         messages=build_tool_messages(question, history=history),
     )
     content = response.choices[0].message.content or ""
-    return parse_tool_response(content, question=question, history=history)
+    plan = parse_tool_response(content, question=question, history=history)
+    log_diagnostic_event(
+        "llm_route_complete",
+        started_at=started_at,
+        question=question,
+        history_count=len(normalize_history(history)),
+        intent=plan.intent,
+        primary_tool=plan.primary_tool,
+        confidence=plan.confidence,
+        reason=plan.reason,
+    )
+    return plan
 
 
 def decide_tool_plan(

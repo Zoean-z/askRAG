@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 from functools import lru_cache
 from dataclasses import asdict, replace
@@ -240,6 +241,42 @@ def _load_long_term_context_parallel_node(state: dict[str, Any]) -> dict[str, An
 def _load_response_constraints_parallel_node(state: dict[str, Any]) -> dict[str, Any]:
     result_state = _load_response_constraints_node(state)
     return {"response_constraints": result_state.get("response_constraints", {})}
+
+
+def _run_preplan_parallel(state: dict[str, Any]) -> dict[str, Any]:
+    started_at = perf_counter()
+    node_specs = (
+        ("local_doc_probe", _local_doc_probe_node),
+        ("load_long_term_context", _load_long_term_context_node),
+        ("load_response_constraints", _load_response_constraints_node),
+    )
+    merged_state = dict(state)
+    timings_ms: dict[str, float] = {}
+
+    def _invoke_node(name: str, func, current_state: dict[str, Any]) -> tuple[str, dict[str, Any], float]:
+        node_started_at = perf_counter()
+        result_state = func(current_state)
+        elapsed_ms = round((perf_counter() - node_started_at) * 1000, 1)
+        return name, result_state, elapsed_ms
+
+    with ThreadPoolExecutor(max_workers=len(node_specs)) as executor:
+        future_map = {
+            executor.submit(_invoke_node, name, func, state): name
+            for name, func in node_specs
+        }
+        for future in as_completed(future_map):
+            name, result_state, elapsed_ms = future.result()
+            merged_state.update(result_state)
+            timings_ms[name] = elapsed_ms
+
+    log_diagnostic_event(
+        "preplan_parallel_complete",
+        started_at=started_at,
+        question=state.get("question"),
+        history_count=len(state.get("history") or []),
+        timings_ms=timings_ms,
+    )
+    return merged_state
 
 
 def _plan_request(state: dict[str, Any]) -> dict[str, Any]:
@@ -982,22 +1019,15 @@ def run_agent_graph_stream(
     k: int = 3,
     allow_web_search: bool = True,
 ):
-    state = _plan_request(
-        _load_response_constraints_node(
-            _load_long_term_context_node(
-                _local_doc_probe_node(
-                    _init_request(
-                        {
-                            "question": question,
-                            "history": list(history or []),
-                            "k": int(k),
-                            "allow_web_search": bool(allow_web_search),
-                        }
-                    )
-                )
-            )
-        )
+    initial_state = _init_request(
+        {
+            "question": question,
+            "history": list(history or []),
+            "k": int(k),
+            "allow_web_search": bool(allow_web_search),
+        }
     )
+    state = _plan_request(_run_preplan_parallel(initial_state))
     next_action = _decide_next_action(state)
     tool_plan: ToolPlan = state["tool_plan"]
 

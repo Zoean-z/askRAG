@@ -2,6 +2,7 @@
 import os
 import sys
 from pathlib import Path
+from time import perf_counter
 
 from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
@@ -19,6 +20,7 @@ from app.conversations import (
     get_conversation,
     list_conversations,
 )
+from app.agent_tools import log_diagnostic_event
 from app.documents import delete_document, list_documents, rebuild_vector_index, store_uploaded_document
 from app.openviking_runtime import describe_openviking_runtime
 from app.rag import get_chat_model, get_web_search_model, stream_answer_question
@@ -376,6 +378,7 @@ async def ask(request: AskRequest) -> AskResponse:
 
 @app.post("/ask/stream")
 async def ask_stream(request: AskRequest) -> StreamingResponse:
+    request_started_at = perf_counter()
     question = request.question.strip()
     history = normalize_history(request.history)
     if not question:
@@ -421,6 +424,13 @@ async def ask_stream(request: AskRequest) -> StreamingResponse:
         collected_memory_notices: list[dict] = []
 
         try:
+            log_diagnostic_event(
+                "ask_stream_request",
+                question=question,
+                conversation_id=conversation["id"],
+                use_web_search=bool(request.use_web_search),
+                history_count=len(history),
+            )
             yield sse_event("conversation", {"conversation_id": conversation["id"], "title": conversation.get("title") or "New chat"})
             for event_name, payload in stream_answer_question(
                 question,
@@ -477,6 +487,19 @@ async def ask_stream(request: AskRequest) -> StreamingResponse:
                     trace=collected_trace,
                     memory_notices=collected_memory_notices,
                 )
+            log_diagnostic_event(
+                "ask_stream_complete",
+                started_at=request_started_at,
+                question=question,
+                conversation_id=conversation["id"],
+                use_web_search=bool(request.use_web_search),
+                history_count=len(history),
+                answer_chars=sum(len(chunk) for chunk in collected_answer),
+                source_count=len(collected_sources),
+                trace_mode=collected_trace.get("mode"),
+                done_sent=done_sent,
+                recorded_turn=bool(should_record_turn and collected_answer),
+            )
             if not done_sent:
                 yield sse_event("done", {})
 
