@@ -87,28 +87,110 @@ Library: http://127.0.0.1:8001/library
 
 ### 5. 如果要完整体验记忆，再启动 OpenViking
 
-按你自己的环境准备下面这些路径：
+当前仓库里的文档问答可以单独跑；只有想体验长期记忆、任务状态回忆和 OpenViking-backed memory search 时，才需要把 OpenViking 一起装起来。
 
-- `.\.venv\Scripts\openviking-server.exe`
-- `.\.venv\Scripts\ov.exe`
-- `$env:USERPROFILE\.openviking\ov.conf`
-- `$env:USERPROFILE\.openviking\ovcli.conf`
-- `data\openviking_workspace`
+#### 5.1 安装 OpenViking
 
-然后按这个顺序启动：
+OpenViking 不在 `requirements.txt` 里，需要单独安装。最直接的做法是在当前虚拟环境里安装：
 
 ```powershell
-.\.venv\Scripts\openviking-server.exe --config $env:USERPROFILE\.openviking\ov.conf
+.\.venv\Scripts\python.exe -m pip install -U openviking
 ```
 
-再开一个终端，做健康检查：
+安装完成后，下面两个命令应该能找到：
 
 ```powershell
+.\.venv\Scripts\openviking-server.exe --help
+.\.venv\Scripts\ov.exe --help
+```
+
+如果你的环境里生成的是无扩展名命令，也可以改用：
+
+```powershell
+openviking-server --help
+ov --help
+```
+
+#### 5.2 初始化配置目录
+
+先创建 OpenViking 的默认配置目录：
+
+```powershell
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.openviking" | Out-Null
+New-Item -ItemType Directory -Force -Path ".\data\openviking_workspace" | Out-Null
+```
+
+推荐先尝试官方初始化向导：
+
+```powershell
+.\.venv\Scripts\openviking-server.exe init
+```
+
+这个命令会交互式生成 `ov.conf`。如果你的版本没有 `init`，就手动创建下面两个文件。
+
+#### 5.3 准备 `ov.conf` 和 `ovcli.conf`
+
+`ov.conf` 至少要告诉 OpenViking 工作目录放在哪里。最小示例可以是：
+
+```json
+{
+  "storage": {
+    "workspace": "D:/path/to/askRAG/data/openviking_workspace"
+  }
+}
+```
+
+把它保存到：
+
+- `$env:USERPROFILE\.openviking\ov.conf`
+
+然后创建 CLI 连接配置 `$env:USERPROFILE\.openviking\ovcli.conf`：
+
+```json
+{
+  "url": "http://127.0.0.1:1933",
+  "timeout": 60.0,
+  "output": "table"
+}
+```
+
+如果你已经用 `openviking-server init` 生成过 `ov.conf`，这里只需要确认里面的 `storage.workspace` 指向你当前仓库下的 `data/openviking_workspace`。
+
+#### 5.4 设置环境变量并启动
+
+```powershell
+$env:OPENVIKING_CONFIG_FILE = "$env:USERPROFILE\.openviking\ov.conf"
+$env:OPENVIKING_CLI_CONFIG_FILE = "$env:USERPROFILE\.openviking\ovcli.conf"
+.\.venv\Scripts\openviking-server.exe
+```
+
+如果你想显式指定配置文件，也可以这样启动：
+
+```powershell
+.\.venv\Scripts\openviking-server.exe --config $env:OPENVIKING_CONFIG_FILE
+```
+
+#### 5.5 健康检查
+
+另开一个终端，执行：
+
+```powershell
+$env:OPENVIKING_CLI_CONFIG_FILE = "$env:USERPROFILE\.openviking\ovcli.conf"
 .\.venv\Scripts\ov.exe health
 ```
 
-看到 `status: ok` 和 `healthy: true` 后，再回到 askRAG 启动主服务即可。
-如果你只想先看文档问答，也可以先不启 OpenViking，`/library` 和聊天页本身仍然可以跑。
+看到类似下面的结果，说明 OpenViking 已经可用：
+
+- `status: ok`
+- `healthy: true`
+
+然后再启动 askRAG 主服务：
+
+```powershell
+.\.venv\Scripts\python.exe app\main.py
+```
+
+如果只想先验证本地文档问答，也可以先不启 OpenViking；`/library` 和聊天页本身仍然可以跑。
 
 ## 一些当前边界
 

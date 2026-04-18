@@ -10,13 +10,13 @@ As of April 3, 2026, `askRAg` uses OpenViking only for assistant memory and answ
 
 This file intentionally reflects the current runtime contract only. Older document-backend experiments and migration planning notes have been removed from the active repo state.
 
-## Verified Local Paths
+## Expected Local Paths
 
-- OpenViking CLI: `D:\py\askRAg\.venv\Scripts\ov.exe`
-- OpenViking server binary: `D:\py\askRAg\.venv\Scripts\openviking-server.exe`
-- Server config: `C:\Users\Lenovo\.openviking\ov.conf`
-- CLI config: `C:\Users\Lenovo\.openviking\ovcli.conf`
-- Workspace: `D:\py\askRAg\data\openviking_workspace`
+- OpenViking CLI: `.\.venv\Scripts\ov.exe`
+- OpenViking server binary: `.\.venv\Scripts\openviking-server.exe`
+- Server config: `$env:USERPROFILE\.openviking\ov.conf`
+- CLI config: `$env:USERPROFILE\.openviking\ovcli.conf`
+- Workspace: `data\openviking_workspace`
 - Default local endpoint: `http://127.0.0.1:1933`
 
 Notes:
@@ -27,12 +27,14 @@ Notes:
 ## Start OpenViking
 
 ```powershell
-.\.venv\Scripts\openviking-server.exe --config C:\Users\Lenovo\.openviking\ov.conf
+$env:OPENVIKING_CONFIG_FILE = "$env:USERPROFILE\.openviking\ov.conf"
+.\.venv\Scripts\openviking-server.exe --config $env:OPENVIKING_CONFIG_FILE
 ```
 
 ## Health Check
 
 ```powershell
+$env:OPENVIKING_CLI_CONFIG_FILE = "$env:USERPROFILE\.openviking\ovcli.conf"
 .\.venv\Scripts\ov.exe health
 ```
 
