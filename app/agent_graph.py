@@ -52,6 +52,10 @@ def _looks_like_profile_memory_query(question: str) -> bool:
         phrase in normalized
         for phrase in (
             "我住在哪里",
+            "我现在在哪",
+            "我现在在哪里",
+            "我在哪",
+            "我在哪里",
             "我住哪",
             "我住哪儿",
             "我住在",

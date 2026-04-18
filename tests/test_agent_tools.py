@@ -576,6 +576,49 @@ class AgentToolsTests(unittest.TestCase):
         advance_mock.assert_called_once_with(workflow_state, "assess_local")
         refresh_mock.assert_called_once_with(workflow_state)
 
+    def test_assess_local_retrieval_followup_escalates_detail_request_to_web_when_local_is_shallow(self):
+        workflow_state = WorkflowState(
+            question="Explain RLHF in detail.",
+            history=[],
+            tool_plan=build_tool_plan("local_doc_query", reason="test"),
+        )
+        workflow_state.local_bundle = ChunkRetrievalBundle(
+            rewritten_question="Explain RLHF in detail.",
+            vector_results=[],
+            keyword_results=[],
+            merged_results=[],
+            reranked_results=[],
+            results=[
+                (
+                    Document(
+                        page_content="RLHF is mentioned here, but the document only gives a short overview and does not explain the mechanism in depth.",
+                        metadata={"source": "data/docs/OpenAI简介.md", "chunk_index": 0, "chunk_id": "doc::0"},
+                    ),
+                    1.0,
+                )
+            ],
+            sources=["data/docs/OpenAI简介.md"],
+            history=[],
+            rerank_diagnostics=RerankDiagnostics(),
+            retrieval_debug={},
+        )
+        workflow_state.local_retrieval_relevant = True
+
+        with (
+            patch("app.workflow._advance_step") as advance_mock,
+            patch("app.workflow._should_keep_file_anchored_query_local", return_value=False),
+            patch("app.workflow._local_answer_is_sufficient", return_value=True),
+            patch("app.workflow._refresh_assessment_trace") as refresh_mock,
+        ):
+            result = assess_local_retrieval_followup(workflow_state)
+
+        self.assertTrue(result.needs_web)
+        self.assertEqual(result.decision_reason, "local_answer_sufficient_but_detail_web_needed")
+        self.assertTrue(workflow_state.needs_web)
+        self.assertFalse(workflow_state.combined_sufficient)
+        advance_mock.assert_called_once_with(workflow_state, "assess_local")
+        refresh_mock.assert_called_once_with(workflow_state)
+
     def test_finalize_retrieval_answer_refreshes_trace_after_answer(self):
         workflow_state = WorkflowState(question="q", history=[], tool_plan=build_tool_plan("local_doc_query", reason="test"))
         workflow_state.status = "running"

@@ -91,6 +91,19 @@ class SessionMemoryTests(unittest.TestCase):
         self.assertEqual(preference["title"], "Pinned memory")
         self.assertEqual(preference["payload"]["instruction"], "\u4ee5\u540e\u56de\u7b54\u65f6\u5148\u7ed9\u7ed3\u8bba")
 
+    def test_explicit_remember_location_extracts_profile_fact(self):
+        candidates = session_memory.extract_memory_candidates(
+            question="记住我现在在中国",
+            answer="",
+            sources=[],
+            history=[],
+        )
+
+        profile = next(item for item in candidates if item["memory_type"] == "stable_profile_fact")
+        self.assertEqual(profile["title"], "User location")
+        self.assertEqual(profile["payload"]["profile_key"], "location")
+        self.assertEqual(profile["payload"]["value"], "中国")
+
     def test_remember_max_answer_chars_extracts_structured_preference(self):
         candidates = session_memory.extract_memory_candidates(
             question="记住以后回答不要超过一百字",
@@ -272,6 +285,21 @@ class SessionMemoryTests(unittest.TestCase):
         assert context is not None
         self.assertIn("stable_profile_fact", context)
         self.assertIn("长沙", context)
+
+    def test_find_profile_memory_context_supports_where_am_i_now_variants(self):
+        session_memory.record_completed_turn(
+            question="我现在在中国",
+            answer="你现在在中国。",
+            sources=[],
+            history=[],
+        )
+
+        context = session_memory.find_profile_memory_context("我现在在哪", history=[], sources=[])
+
+        self.assertIsNotNone(context)
+        assert context is not None
+        self.assertIn("stable_profile_fact", context)
+        self.assertIn("中国", context)
 
     def test_build_reference_history_reconstructs_recent_turns_from_memory(self):
         session_memory.record_completed_turn(

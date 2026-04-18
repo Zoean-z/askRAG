@@ -104,6 +104,22 @@ class AgentGraphTests(unittest.TestCase):
         self.assertIs(result, expected)
         direct_mock.assert_called_once_with("任务是什么", history=[], memory_context=task_context)
 
+    def test_run_agent_graph_routes_profile_memory_query_to_direct_answer(self):
+        expected = AnswerRunResult(answer="profile", sources=[], trace={"mode": "direct_answer"})
+        profile_context = "[Session Memory]\n- [L1] stable_profile_fact: User location: China."
+
+        with (
+            patch("app.agent_graph.extract_router_hints", return_value=_router_hints()),
+            patch("app.agent_tools.probe_local_docs", return_value=_probe()),
+            patch("app.agent_tools.load_long_term_context", return_value=SimpleNamespace(reference_history=[], memory_context=profile_context)),
+            patch("app.agent_tools.load_response_constraints", return_value={}),
+            patch("app.agent_tools.answer_directly_tool", return_value=expected) as direct_mock,
+        ):
+            result = run_agent_graph_detailed("我现在在哪", history=[], k=3)
+
+        self.assertIs(result, expected)
+        direct_mock.assert_called_once_with("我现在在哪", history=[], memory_context=profile_context)
+
     def test_run_preplan_parallel_preserves_memory_context(self):
         from app.agent_graph import _init_request, _run_preplan_parallel
 

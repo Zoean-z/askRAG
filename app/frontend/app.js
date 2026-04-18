@@ -2341,11 +2341,12 @@ function initChatPage() {
       );
       await fetchConversationList();
       setStatus("ready");
-      } catch (error) {
-        const detail = error instanceof Error ? error.message : t().status.failed;
-        setMessageToolStatus(assistantMessage, t().toolStatus.failed, "failed");
-        if (getMessageText(assistantMessage)) {
-          appendMessageText(assistantMessage, `\n\n${t().errors.requestFailed} ${detail}`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : t().status.failed;
+      setMessageThinking(assistantMessage, false);
+      setMessageToolStatus(assistantMessage, t().toolStatus.failed, "failed");
+      if (getMessageText(assistantMessage)) {
+        appendMessageText(assistantMessage, `\n\n${t().errors.requestFailed} ${detail}`);
       } else {
         setMessageText(assistantMessage, `${t().errors.requestFailed} ${detail}`);
       }

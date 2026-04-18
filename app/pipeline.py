@@ -42,7 +42,6 @@ DIRECT_ANSWER_SYSTEM_PROMPT = (
     "Do not claim to have searched the knowledge base unless retrieval was actually used. "
     "Keep the answer concise."
 )
-DIRECT_ANSWER_NOTICE = "[direct_answer] 以下回答未使用知识库。"
 WEB_SEARCH_DISABLED_MESSAGE = "[web_search] \u5f53\u524d\u672a\u542f\u7528\u7f51\u9875\u67e5\u8be2\u5de5\u5177\uff0c\u65e0\u6cd5\u56de\u7b54\u8fd9\u7c7b\u9700\u8981\u8054\u7f51\u6216\u6700\u65b0\u4fe1\u606f\u7684\u95ee\u9898\u3002"
 LONG_SUMMARY_DIRECT_THRESHOLD = 4200
 SUMMARY_CHUNK_SIZE = 2200
@@ -95,8 +94,8 @@ WEB_SEARCH_QUALITY_FRESHNESS_TERMS = (
     "型号",
     "版本",
 )
-WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_EN = "official site official docs"
-WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_ZH = "官网 官方文档 权威来源"
+WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_EN = "site:openai.com site:platform.openai.com official site official docs"
+WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_ZH = "site:openai.com site:platform.openai.com 官方 官网 官方文档"
 
 
 WEB_SEARCH_QUALITY_FRESHNESS_TERMS_ACTIVE = (
@@ -123,7 +122,7 @@ WEB_SEARCH_QUALITY_FRESHNESS_TERMS_ACTIVE = (
     "型号",
     "版本",
 )
-WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_ZH_ACTIVE = "官网 官方文档 权威来源"
+WEB_SEARCH_OFFICIAL_QUERY_SUFFIX_ZH_ACTIVE = "site:openai.com site:platform.openai.com 官方 官网 官方文档"
 
 
 def build_web_search_disabled_trace(question: str, tool_plan: ToolPlan) -> dict[str, Any]:
@@ -327,8 +326,8 @@ def _build_direct_web_search_queries(
     return [query for query in queries if query][:3]
 
 
-def _execute_direct_web_request(query: str) -> tuple[Any, str, list[str]]:
-    request = build_web_search_request(query)
+def _execute_direct_web_request(query: str, *, lightweight: bool = False) -> tuple[Any, str, list[str]]:
+    request = build_web_search_request(query, lightweight=lightweight)
     if request.get("provider") == "glm":
         response = run_glm_web_search(
             str(request.get("input", "")).strip(),
@@ -389,7 +388,7 @@ def _run_direct_web_search_quality_pass(
     for attempt_index, query in enumerate(queries, start=1):
         attempt_started_at = perf_counter()
         try:
-            response, answer, sources = _execute_direct_web_request(query)
+            response, answer, sources = _execute_direct_web_request(query, lightweight=True)
         except (ValueError, AuthenticationError, RateLimitError, BadRequestError, APIConnectionError) as error:
             provider_error = str(error)
             failure_message = build_web_search_failure_message(provider_error)
@@ -484,6 +483,101 @@ def _run_direct_web_search_quality_pass(
         if best_relevant and (not _is_freshness_or_high_trust_question(question, tool_plan) or best_official):
             break
 
+    if not best_relevant and best_sources:
+        try:
+            response, answer, sources = _execute_direct_web_request(best_query or queries[0], lightweight=False)
+        except (ValueError, AuthenticationError, RateLimitError, BadRequestError, APIConnectionError) as error:
+            provider_error = str(error)
+            failure_message = build_web_search_failure_message(provider_error)
+            log_diagnostic_event(
+                "web_search_failed",
+                started_at=started_at,
+                raw_query=rewrite_result.raw_query,
+                normalized_query=rewrite_result.normalized_query,
+                rewrite_used=rewrite_result.rewrite_used,
+                rewritten_query=rewrite_result.rewritten_query,
+                resolved_references=rewrite_result.resolved_references,
+                selected_query=best_query or (queries[0] if queries else question),
+                attempt_query=best_query or (queries[0] if queries else question),
+                attempt_index=len(queries) + 1,
+                total_attempts=len(queries) + 1,
+                web_provider_name=provider_name,
+                web_request_sent=True,
+                web_provider_status=_web_provider_status_from_error_detail(provider_error),
+                web_provider_error=provider_error,
+                raw_web_result_count=0,
+                parsed_web_result_count=0,
+                failure_category="provider_failure",
+                final_failure_reason=failure_message,
+            )
+            debug = {
+                "query_count": len(queries) + 1,
+                "selected_query": best_query or (queries[0] if queries else question),
+                "web_relevance_score": best_score,
+                "web_relevant": best_relevant,
+                "official_like_sources": best_official,
+                "failure_category": "provider_failure",
+                "web_provider_name": provider_name,
+                "web_request_sent": True,
+                "web_provider_status": _web_provider_status_from_error_detail(provider_error),
+                "web_provider_error": provider_error,
+                "raw_web_result_count": best_raw_count,
+                "parsed_web_result_count": len(best_sources),
+                "final_failure_reason": failure_message,
+            }
+            return failure_message, best_sources or [], debug
+        raw_result_count = extract_web_search_result_count(response)
+        score, relevant = _assess_web_result_relevance(question, answer, sources)
+        official_like = _has_official_like_source(question, sources)
+        candidate_rank = (
+            int(relevant),
+            int(official_like and _is_freshness_or_high_trust_question(question, tool_plan)),
+            score,
+            int(bool(sources)),
+            len(answer.strip()),
+        )
+        current_rank = (
+            int(best_relevant),
+            int(best_official and _is_freshness_or_high_trust_question(question, tool_plan)),
+            best_score,
+            int(bool(best_sources)),
+            len(best_answer.strip()),
+        )
+        if candidate_rank > current_rank:
+            best_answer = answer
+            best_sources = sources
+            best_query = best_query or (queries[0] if queries else question)
+            best_score = score
+            best_relevant = relevant
+            best_official = official_like
+            best_raw_count = raw_result_count
+        log_diagnostic_event(
+            "web_search_attempt",
+            started_at=started_at,
+            raw_query=rewrite_result.raw_query,
+            normalized_query=rewrite_result.normalized_query,
+            rewrite_used=rewrite_result.rewrite_used,
+            rewritten_query=rewrite_result.rewritten_query,
+            resolved_references=rewrite_result.resolved_references,
+            selected_query=best_query,
+            attempt_query=best_query or (queries[0] if queries else question),
+            attempt_index=len(queries) + 1,
+            total_attempts=len(queries) + 1,
+            web_provider_name=provider_name,
+            web_request_sent=True,
+            web_provider_status="success",
+            web_provider_error="",
+            raw_web_result_count=raw_result_count,
+            parsed_web_result_count=len(sources),
+            result_count=len(sources),
+            source_preview=build_source_preview(sources, answer=answer),
+            relevance_score=score,
+            relevant=relevant,
+            web_result_relevance=score,
+            web_result_relevant=relevant,
+            official_like=official_like,
+        )
+
     debug = {
         "query_count": len(queries),
         "selected_query": best_query,
@@ -498,6 +592,14 @@ def _run_direct_web_search_quality_pass(
         "parsed_web_result_count": len(best_sources),
         "failure_category": "irrelevant_results" if best_sources else "empty_results",
     }
+    freshness_question = _is_freshness_or_high_trust_question(question, tool_plan)
+    relaxed_acceptance = freshness_question and bool(best_sources) and best_score >= 2.5
+    if not best_relevant and relaxed_acceptance:
+        best_relevant = True
+        best_official = best_official or _has_official_like_source(question, best_sources)
+        debug["web_relevant"] = True
+        debug["official_like_sources"] = best_official
+        debug["relevance_relaxed"] = True
     if not best_relevant:
         failure_category = "irrelevant_results" if best_sources else "empty_results"
         final_failure_reason = WEB_EVIDENCE_INSUFFICIENT_MESSAGE
@@ -522,6 +624,7 @@ def _run_direct_web_search_quality_pass(
             web_result_relevance=best_score,
             web_relevant=best_relevant,
             official_like_sources=best_official,
+            relevance_relaxed=debug.get("relevance_relaxed", False),
         )
         debug["failure_category"] = failure_category
         debug["final_failure_reason"] = final_failure_reason
@@ -621,6 +724,7 @@ def _run_direct_web_search_quality_pass(
         final_failure_reason="",
         web_relevance_score=best_score,
         web_relevant=best_relevant,
+        relevance_relaxed=debug.get("relevance_relaxed", False),
     )
     return summarized.strip() or EMPTY_ANSWER_MESSAGE, best_sources, debug
 
@@ -846,8 +950,7 @@ def normalize_direct_answer_key(question: str) -> str:
 
 
 def format_direct_answer(answer: str) -> str:
-    body = answer.strip() or EMPTY_ANSWER_MESSAGE
-    return f"{DIRECT_ANSWER_NOTICE}\n\n{body}"
+    return answer.strip() or EMPTY_ANSWER_MESSAGE
 
 
 def build_direct_answer_messages(

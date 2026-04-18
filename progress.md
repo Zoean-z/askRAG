@@ -1,5 +1,78 @@
 # Progress
 
+## 2026-04-18 README Rewritten for Portfolio
+- Rewrote the README in Chinese around the requested five-part structure:
+  - one-sentence description
+  - Mermaid architecture diagram
+  - core design decisions
+  - RFC links
+  - quick start
+- Removed the standalone demo website from the visible README narrative.
+- Kept the GIF reference in the repo and made it part of the first-screen presentation.
+
+### decision_audit
+- Files changed:
+  - `README.md`
+  - `.project-loop/PLAN.md`
+  - `PROJECT_STATUS.md`
+  - `progress.md`
+- Planning mapping:
+  - turn the README into the primary portfolio surface
+  - keep deployment guidance inside the README rather than as a separate demo product
+  - preserve the GIF and quick-start entry points as the top-level presentation
+- Tradeoffs:
+  - removed demo website language entirely to keep the README focused and easier to scan
+  - used a concise Mermaid diagram instead of a long architecture section so the first screen stays readable
+- Potential drift:
+  - the RFC link targets depend on the repo keeping those docs committed
+- Next step:
+  - verify the rendered README on GitHub, then tighten the GIF caption and the quick-start text if needed
+
+## 2026-04-18 README-Only Portfolio Focus
+- Narrowed the active project goal to a single polished README first screen.
+- Removed the standalone demo website from the active plan.
+- Kept the GIF and Docker deployment guidance as README content instead of separate product surfaces.
+
+### decision_audit
+- Files changed:
+  - `.project-loop/PLAN.md`
+  - `PROJECT_STATUS.md`
+  - `progress.md`
+- Planning mapping:
+  - shift the portfolio target from README + demo website to README only
+  - keep the README first screen as the main showcase surface
+  - retain Docker guidance as documentation inside the README, not as a separate demo surface
+- Tradeoffs:
+  - reduced scope substantially so the project can converge on one high-signal artifact
+  - dropped the static demo website / GitHub Pages work to avoid split attention
+- Potential drift:
+  - none noted; this is a scope reduction, not a product change
+- Next step:
+  - finalize the README first-screen copy and GIF capture scope, then write the Docker/run guidance that belongs in the README
+
+## 2026-04-18 README First Screen Entry Points
+- Added a Chinese first-screen block to the README with three clearly clickable entry points:
+  - GIF
+  - Demo website
+  - Docker deployment
+- Kept the existing English documentation below as supporting detail instead of replacing it.
+
+### decision_audit
+- Files changed:
+  - `README.md`
+  - `.project-loop/PLAN.md`
+  - `PROJECT_STATUS.md`
+  - `progress.md`
+- Planning mapping:
+  - add a Chinese README first screen with three obvious clickable entry points
+- Tradeoffs:
+  - used a GitHub-friendly markdown table plus anchored subsections instead of custom styling so the links stay reliable in the rendered README
+  - kept the rest of the README intact to avoid disturbing the existing technical documentation
+- Potential drift:
+  - the GIF/demo/Docker sections are currently placeholders and need the actual assets and links later
+- Next step:
+  - write the GIF script and demo-site structure, then wire those assets into the new entry points
+
 ## Current Snapshot
 - Current focus: split local retrieval relevance from local answer sufficiency so incomplete local hits can still fall back to web.
 - The local sufficiency layer now carries separate relevance / answer-sufficiency signals.

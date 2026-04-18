@@ -44,6 +44,8 @@ from app.validators import RetrievalValidation, validate_chunk_results
 
 WORKFLOW_MAX_STEPS = 6
 WEB_LIGHT_SEARCH_MAX_ATTEMPTS = 2
+DETAIL_WEB_ESCALATION_MIN_RESULTS = 2
+DETAIL_WEB_ESCALATION_MIN_CONTEXT_CHARS = 900
 WEB_SEARCH_TOOLS = [
     {"type": "web_search"},
     {"type": "web_extractor"},
@@ -455,6 +457,29 @@ def _local_answer_is_sufficient(state: WorkflowState) -> bool:
         return len(matched_terms) >= 2 or has_explanatory_language
 
     return len(matched_terms) >= 2 or has_explanatory_language
+
+
+def _should_escalate_detail_document_request_to_web(state: WorkflowState) -> bool:
+    if not state.allow_web_search:
+        return False
+    if state.local_bundle is None or not state.local_bundle.results:
+        return False
+    if not state.local_retrieval_relevant:
+        return False
+    if _should_keep_file_anchored_query_local(state):
+        return False
+    if not question_requires_deep_read(state.question, history=state.history):
+        return False
+    if not state.local_answer_sufficient:
+        return False
+
+    if len(state.local_bundle.results) < DETAIL_WEB_ESCALATION_MIN_RESULTS:
+        return True
+
+    local_context = state.local_context.strip() or _build_local_context_snapshot(state)
+    if not local_context.strip():
+        return True
+    return len(local_context) < DETAIL_WEB_ESCALATION_MIN_CONTEXT_CHARS
 
 
 def _refresh_assessment_trace(state: WorkflowState) -> None:
@@ -1333,6 +1358,12 @@ def _assess_local_step(state: WorkflowState) -> None:
     state.local_sufficient = state.local_answer_sufficient
 
     if state.local_answer_sufficient:
+        if _should_escalate_detail_document_request_to_web(state):
+            state.needs_web = True
+            state.combined_sufficient = False
+            state.decision_reason = "local_answer_sufficient_but_detail_web_needed"
+            _refresh_assessment_trace(state)
+            return
         state.needs_web = False
         state.combined_sufficient = True
         state.decision_reason = "local_answer_sufficient"
@@ -1718,6 +1749,8 @@ def _workflow_fallback_answer(state: WorkflowState) -> str:
 
 
 def _run_summarize_step(state: WorkflowState) -> tuple[str, list[str]]:
+    from app.agent_tools import log_diagnostic_event
+
     started_at = perf_counter()
     _advance_step(state, "summarize")
     if state.status != "running":

@@ -1005,6 +1005,7 @@ def assess_local_retrieval_followup(state: WorkflowState) -> LocalAssessmentTool
         _requires_relevant_web,
         _should_block_auto_web_fallback,
         _should_keep_file_anchored_query_local,
+        _should_escalate_detail_document_request_to_web,
     )
 
     _advance_step(state, "assess_local")
@@ -1032,6 +1033,12 @@ def assess_local_retrieval_followup(state: WorkflowState) -> LocalAssessmentTool
     state.local_sufficient = state.local_answer_sufficient
 
     if state.local_answer_sufficient:
+        if _should_escalate_detail_document_request_to_web(state):
+            state.needs_web = True
+            state.combined_sufficient = False
+            state.decision_reason = "local_answer_sufficient_but_detail_web_needed"
+            _refresh_assessment_trace(state)
+            return LocalAssessmentToolResult(needs_web=True, decision_reason=state.decision_reason)
         state.needs_web = False
         state.combined_sufficient = True
         state.decision_reason = "local_answer_sufficient"

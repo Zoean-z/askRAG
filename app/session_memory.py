@@ -69,6 +69,10 @@ RECENT_TASK_QUERY_TERMS = (
 
 PROFILE_QUERY_TERMS = (
     "我住在哪里",
+    "我现在在哪",
+    "我现在在哪里",
+    "我在哪",
+    "我在哪里",
     "我住哪",
     "我住哪里",
     "我叫什么",
@@ -83,10 +87,15 @@ PROFILE_QUERY_TERMS = (
 PROFILE_QUERY_CATEGORY_TERMS = {
     "location": (
         "我住在哪里",
+        "我现在在哪",
+        "我现在在哪里",
+        "我在哪",
+        "我在哪里",
         "我住哪",
         "我住哪里",
         "where do i live",
         "where am i",
+        "where am i now",
         "where am i located",
     ),
     "name": (
@@ -158,7 +167,10 @@ PROFILE_PATTERNS = (
         lambda normalized: f"User gender: {normalized}.",
     ),
     (
-        re.compile(r"(?:^|[\s，,])(?:i live in|i am in|我住在|我在)\s*([A-Za-z\u4e00-\u9fff ._-]{2,40})", re.IGNORECASE),
+        re.compile(
+            r"(?:^|[\s，,])(?:i live in|i am in|我现在在|我现在住在|我住在|我在)\s*([A-Za-z\u4e00-\u9fff ._-]{2,40})",
+            re.IGNORECASE,
+        ),
         "location",
         lambda value: " ".join(value.strip().split()),
         lambda normalized: f"User location: {normalized}.",
@@ -626,6 +638,10 @@ def _preference_entries(question: str) -> list[dict[str, Any]]:
         )
 
     if explicit_memory and remembered and not entries:
+        remembered_profile_entries = _profile_entries(remembered)
+        if remembered_profile_entries:
+            entries.extend(remembered_profile_entries)
+            return entries
         entries.append(
             _build_entry(
                 "pinned_preference",
@@ -1444,6 +1460,9 @@ def find_profile_memory_context(
     normalized_sources = {_normalize_text(Path(source).name) for source in (sources or []) if source}
     normalized_question = _normalize_text(question)
     category = _profile_query_category(question)
+    profile_types = {"stable_profile_fact"}
+    if category == "location":
+        profile_types.add("pinned_preference")
 
     recent = sorted(
         [
@@ -1458,7 +1477,7 @@ def find_profile_memory_context(
                 ),
             )
             for entry in approved
-            if entry.get("memory_type") == "stable_profile_fact"
+            if entry.get("memory_type") in profile_types
         ],
         key=lambda item: (item[1], str(item[0].get("updated_at") or "")),
         reverse=True,
