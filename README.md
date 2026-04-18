@@ -87,6 +87,9 @@ Library: http://127.0.0.1:8001/library
 
 ### 5. 如果要完整体验记忆，再启动 OpenViking
 
+<details>
+<summary>展开查看 OpenViking 的完整安装与启动步骤</summary>
+
 当前仓库里的文档问答可以单独跑；只有想体验长期记忆、任务状态回忆和 OpenViking-backed memory search 时，才需要把 OpenViking 一起装起来。
 
 #### 5.1 安装 OpenViking
@@ -191,6 +194,8 @@ $env:OPENVIKING_CLI_CONFIG_FILE = "$env:USERPROFILE\.openviking\ovcli.conf"
 ```
 
 如果只想先验证本地文档问答，也可以先不启 OpenViking；`/library` 和聊天页本身仍然可以跑。
+
+</details>
 
 ## 一些当前边界
 
