@@ -20,6 +20,7 @@ node_modules/
 data/chroma/
 data/openviking_workspace/
 data/memory_docs/
+data/runtime/
 data/conversation_threads.json
 data/document_registry.json
 data/memory_registry.json
@@ -34,3 +35,6 @@ tmp_*.png
 tmp_*.txt
 tmp-*.png
 tmp-*.txt
+readmep/index.png
+readmep/knowledge.png
+readmep/memory.png
