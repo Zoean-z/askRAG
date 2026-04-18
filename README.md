@@ -54,11 +54,11 @@ flowchart TB
 会话删掉后，相关的会话记忆应该一起清；但长期事实和偏好不能因为一条会话被误删。这个边界不说清楚，记忆越用越不可信。
 ## RFC 链接
 
-- [RFC：项目总规划](PROJECT_PLAN.md)
-- [RFC：当前执行计划](.project-loop/PLAN.md)
-- [RFC：OpenViking 运行说明](openviking.md)
+https://github.com/volcengine/OpenViking/discussions/1190 一个最小集成示例方案：Chroma 负责静态检索，OpenViking 负责 session context 和 archive memory
 
 ## 快速启动
+
+> 当前文档的命令示例以 Windows PowerShell 为例。如果你在 macOS 或 Linux 上运行，需要把 `.\.venv\Scripts\...` 替换成对应环境下的虚拟环境可执行路径。
 
 ### 1. 安装依赖
 
@@ -197,7 +197,7 @@ $env:OPENVIKING_CLI_CONFIG_FILE = "$env:USERPROFILE\.openviking\ovcli.conf"
 
 </details>
 
-## 一些当前边界
+## 设计边界
 
 - 文档证据和记忆上下文是分开的。
 - 记忆写回是可控的，不是把每轮对话都当成长期事实。
