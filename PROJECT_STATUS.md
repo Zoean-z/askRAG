@@ -17,6 +17,7 @@
 - The README has been rewritten into the requested five-part structure and is now the primary showcase surface.
 - The standalone demo website is no longer a goal.
 - The README now centers on a one-sentence description, a Mermaid architecture diagram, core design decisions, RFC links, and quick start guidance.
+- The `app/` tree is already reasonably split by responsibility; further classification is a later cleanup item, not the current priority.
 - Memory should be shown through visible behavior changes: before/after comparison, a memory-updated cue, and traceable source references.
 - The task-memory demo should emphasize task progress continuity, not a generic prompt effect.
 - OpenViking is still the main runtime dependency for memory; for Docker/demo purposes, the preferred approach is to bundle it into the same image first.

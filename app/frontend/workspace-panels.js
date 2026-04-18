@@ -126,7 +126,7 @@
     if (supportAuthorHint) supportAuthorHint.textContent = copy.supportAuthorHint;
     if (supportStackLabel) supportStackLabel.textContent = copy.supportStackLabel;
     if (supportStackHint) supportStackHint.textContent = copy.supportStackHint;
-    if (supportAuthorValue) supportAuthorValue.textContent = "askRAG / Codex";
+    if (supportAuthorValue) supportAuthorValue.textContent = "Zoean/codex";
     if (supportStackValue) {
       supportStackValue.textContent =
         state.locale === "zh"
