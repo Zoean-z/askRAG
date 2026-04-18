@@ -87,18 +87,18 @@ Library: http://127.0.0.1:8001/library
 
 ### 5. 如果要完整体验记忆，再启动 OpenViking
 
-先确认下面这些本机路径存在：
+按你自己的环境准备下面这些路径：
 
-- `D:\py\askRAG\.venv\Scripts\openviking-server.exe`
-- `D:\py\askRAG\.venv\Scripts\ov.exe`
-- `C:\Users\Lenovo\.openviking\ov.conf`
-- `C:\Users\Lenovo\.openviking\ovcli.conf`
-- `D:\py\askRAG\data\openviking_workspace`
+- `.\.venv\Scripts\openviking-server.exe`
+- `.\.venv\Scripts\ov.exe`
+- `$env:USERPROFILE\.openviking\ov.conf`
+- `$env:USERPROFILE\.openviking\ovcli.conf`
+- `data\openviking_workspace`
 
 然后按这个顺序启动：
 
 ```powershell
-.\.venv\Scripts\openviking-server.exe --config C:\Users\Lenovo\.openviking\ov.conf
+.\.venv\Scripts\openviking-server.exe --config $env:USERPROFILE\.openviking\ov.conf
 ```
 
 再开一个终端，做健康检查：
@@ -108,7 +108,7 @@ Library: http://127.0.0.1:8001/library
 ```
 
 看到 `status: ok` 和 `healthy: true` 后，再回到 askRAG 启动主服务即可。
-如果只想先看文档问答，也可以先不启 OpenViking，`/library` 和聊天页本身仍然可以跑。
+如果你只想先看文档问答，也可以先不启 OpenViking，`/library` 和聊天页本身仍然可以跑。
 
 ## 一些当前边界
 
